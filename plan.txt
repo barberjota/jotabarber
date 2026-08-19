@@ -5,16 +5,45 @@ ARQUITECTURA Y ESPECIFICACIÓN TÉCNICA - SISTEMA DE GESTIÓN PARA PELUQUERÍA
 1. RESUMEN DEL PROYECTO
 --------------------------------------------------------------------------------
 Desarrollo de una plataforma web integral para peluquería/barbería enfocada en:
-- Reserva ágil de citas para clientes sin fricción (Guest Checkout sin cuenta).
-- Gestión administrativa modular (agenda, personal, servicios, catálogo de productos e inventario).
+- Portal de Clientes con Autenticación (Registro/Login):
+    * Historial de citas y estado en tiempo real.
+    * Sistema de fidelización por puntos y recompensas automáticas (ej. 5to corte con descuento/gratis).
+    * Canje de puntos por productos (ceras, fijadores) o servicios.
+- Gestión Administrativa Modular:
+    * Agenda, barberos/estilistas, servicios, control de inventario de productos y ventas (POS).
+    * Gestión y ajuste de reglas de puntos/fidelización y promociones.
 - Identidad Visual / Estilo: Monocromático de alto contraste (Negro y Blanco / Minimalista & Dark Luxe).
 - Stack Tecnológico: React + Prisma ORM + PostgreSQL (Supabase) + Despliegue en Render.
 
 ================================================================================
-2. IDENTIDAD VISUAL Y PALETA DE COLORES (MONOCROMÁTICO NEGRO Y BLANCO)
+2. SISTEMA DE FIDELIZACIÓN, PUNTOS Y CLIENTE FRECUENTE
 ================================================================================
 
-2.1. Directrices de Diseño (Black & White Minimalist)
+2.1. Reglas de Fidelización por Citas:
+- Contador de Cortes/Servicios Completados:
+    * El sistema registra cada cita con estado COMPLETED.
+    * Regla del 5to Corte: Al agendar la 5ta cita (o al completarse la 4ta), el sistema aplica un
+      descuento automático configurable (ej. 50% de descuento o corte gratis) en el resumen de reserva.
+    * El contador se reinicia o se maneja por ciclos (Corte 5, 10, 15, etc.).
+
+2.2. Sistema de Puntos Acumulables (Puntos de Fidelidad):
+- Por cada monto gastado en servicios o productos (ej: 1 punto por cada $1 / 10 Bs gastados).
+- Los puntos acumulados se visualizan en el perfil del cliente.
+- Redención: Los clientes pueden usar sus puntos acumulados como descuento en citas o para canjear productos.
+
+2.3. Autenticación y Perfil de Usuario:
+- Roles en Base de Datos: CLIENT, STAFF (Barbero), ADMIN.
+- Clientes: Registro con Email, Contraseña, Nombre y Teléfono.
+- Beneficios del Cliente Autenticado:
+    * Visualización de su tarjeta de fidelidad digital (Progreso: "Llevas 3/5 cortes para tu descuento").
+    * Historial de citas pasadas y citas próximas con opción de reprogramar o cancelar.
+    * Saldo de puntos y catálogo de recompensas canjeables.
+
+================================================================================
+3. IDENTIDAD VISUAL Y PALETA DE COLORES (MONOCROMÁTICO NEGRO Y BLANCO)
+================================================================================
+
+3.1. Directrices de Diseño (Black & White Minimalist)
 - Fondos Principales: #000000 (Negro puro) / #0A0A0A (Negro profundo) / #FFFFFF (Blanco puro para contrastes).
 - Superficies y Cards: #121212 / #18181B (Gris grafito ultra oscuro con bordes sutiles #27272A).
 - Tipografía y Textos:
@@ -23,38 +52,40 @@ Desarrollo de una plataforma web integral para peluquería/barbería enfocada en
 - Botones y Llamados a la Acción (CTA):
     * Primario: Fondo #FFFFFF con texto #000000 (Alto contraste e impacto). Hover: #E4E4E7.
     * Secundario / Outline: Fondo transparente con borde 1px sólido #FFFFFF y texto #FFFFFF.
-- Estados de Cita (Acentos neutros):
-    * Confirmada: Badge fondo #FFFFFF con texto #000000.
-    * Pendiente: Badge con borde punteado/sólido #A1A1AA y texto #A1A1AA.
-    * Cancelada: Badge con texto tachado o gris oscuro atenuado #52525B.
+- Tarjeta de Fidelidad Digital (Gamificación en B&W):
+    * Tarjeta negra pulida (#121212) con bordes blancos brillantes (#FFFFFF).
+    * Barra de progreso monocromática con círculos numerados (1 al 5) que se rellenan de blanco al completar cada corte.
 
 ================================================================================
-3. FLUJO DE NEGOCIO Y EXPERIENCIA DE USUARIO (UX/UI)
+4. FLUJO DE NEGOCIO Y EXPERIENCIA DE USUARIO (UX/UI)
 ================================================================================
 
-3.1. Vista Pública / Cliente (Mobile-First / Tema Oscuro Elegante)
-- Landing Page informativa con catálogo visual de servicios y productos en estética monocromática.
-- Wizard de Reserva en 4 pasos:
-    Paso 1: Selección de Servicio (Corte normal, asesoría, barba, etc. con precio y duración).
-    Paso 2: Selección de Barbero/Estilista (o asignación automática/cualquiera disponible).
-    Paso 3: Selección de Fecha y Horario disponible (calculado dinámicamente según duración).
-    Paso 4: Datos de Contacto (Nombre completo y Teléfono/WhatsApp).
-- Confirmación y Gestión:
-    Generación de un token único por cita (URL: /cita/:token) donde el cliente puede consultar
-    el estado, reprogramar o cancelar su cita sin necesidad de autenticarse con contraseña.
+4.1. Vista Pública y Portal de Cliente (Mobile-First / Layout Negro & Blanco)
+- Landing Page informativa con catálogo de servicios, productos y explicación del programa de fidelidad.
+- Autenticación: Modal / Páginas de Inicio de Sesión y Registro con validación rápida.
+- Wizard de Reserva para Clientes:
+    Paso 1: Selección de Servicio (muestra advertencia de si aplica para promoción/descuento de 5to corte).
+    Paso 2: Selección de Barbero/Estilista.
+    Paso 3: Selección de Fecha y Horario disponible.
+    Paso 4: Resumen, selección de aplicación de puntos/descuento de cliente fiel y confirmación con 1 click.
+- Dashboard del Cliente (/mi-cuenta):
+    * Tarjeta de lealtad (Contador de cortes completados hacia el premio del 5to corte).
+    * Saldo de puntos y botón para canjear.
+    * Lista de citas activas y opción de cancelación/reprogramación.
 
-3.2. Vista Administrativa / Panel Dashboard (Desktop-First / Layout Negro & Blanco)
-- Autenticación segura mediante credenciales (Email / Password + JWT o Supabase Auth).
+4.2. Vista Administrativa / Panel Dashboard (Desktop-First / Responsive)
+- Autenticación administrativa segura (Role: ADMIN / STAFF).
 - Layout con Sidebar oscura (#0A0A0A) y navegación modular:
-    * Dashboard: Indicadores del día (citas pendientes, ingresos estimados, servicios más solicitados).
-    * Agenda / Calendario: Vista tipo día/semana con filtros por estilista y registro de citas manuales.
+    * Dashboard: Métricas de ventas, citas del día, clientes más recurrentes y puntos canjeados.
+    * Agenda / Calendario: Vista tipo día/semana con filtros por estilista y marcado de citas a COMPLETED.
+    * Clientes & Fidelización: Listado de clientes, balance de puntos, historial de visitas y ajuste manual de recompensas.
     * Servicios: CRUD de servicios, duración en minutos y tarifas.
     * Estilistas / Personal: Gestión de barberos, fotos, días de descanso y horarios de atención.
-    * Productos / Stock: Catálogo de productos (ceras, fijadores, etc.), inventario y registro de ventas.
-    * Configuración: Días no laborables, intervalos de turnos y parámetros del local.
+    * Productos / Stock: Catálogo de productos (ceras, fijadores, etc.), inventario y ventas POS directas.
+    * Configuración: Parámetros del programa de fidelidad (descuento del 5to corte, ratio de puntos por compra).
 
 ================================================================================
-4. MODELO DE BASE DE DATOS (ESQUEMA PRISMA / POSTGRESQL)
+5. MODELO DE BASE DE DATOS (ESQUEMA PRISMA / POSTGRESQL)
 ================================================================================
 
 datasource db {
@@ -70,6 +101,7 @@ generator client {
 enum Role {
   ADMIN
   STAFF
+  CLIENT
 }
 
 enum AppointmentStatus {
@@ -79,13 +111,25 @@ enum AppointmentStatus {
   CANCELLED
 }
 
+enum RewardType {
+  FIFTH_HAIRCUT_DISCOUNT
+  POINTS_REDEMPTION
+}
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(STAFF)
-  createdAt DateTime @default(now())
+  id              String           @id @default(uuid())
+  email           String           @unique
+  password        String
+  name            String
+  phone           String           @unique
+  role            Role             @default(CLIENT)
+  pointsBalance   Int              @default(0)       // Saldo de puntos acumulados
+  completedCuts   Int              @default(0)       // Contador de cortes para el ciclo de 5 cortes
+  appointments    Appointment[]
+  sales           Sale[]
+  loyaltyLogs     LoyaltyHistory[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Stylist {
@@ -95,6 +139,7 @@ model Stylist {
   isActive     Boolean            @default(true)
   appointments Appointment[]
   schedules    StylistSchedule[]
+  createdAt    DateTime           @default(now())
 }
 
 model StylistSchedule {
@@ -112,6 +157,7 @@ model Service {
   description  String?
   durationMin  Int           // Duración en minutos (ej: 30, 45, 60)
   price        Decimal       @db.Decimal(10, 2)
+  countsForFidelity Boolean  @default(true) // Si este servicio suma al ciclo del 5to corte
   isActive     Boolean       @default(true)
   appointments Appointment[]
 }
@@ -121,45 +167,52 @@ model Product {
   name        String
   description String?
   price       Decimal     @db.Decimal(10, 2)
+  pointsCost  Int?        // Costo en puntos si se puede canjear
   stock       Int         @default(0)
   imageUrl    String?
   isActive    Boolean     @default(true)
   saleItems   SaleItem[]
 }
 
-model Customer {
-  id           String        @id @default(uuid())
-  name         String
-  phone        String        @unique
-  email        String?
-  appointments Appointment[]
-  sales        Sale[]
-  createdAt    DateTime      @default(now())
+model Appointment {
+  id                 String            @id @default(uuid())
+  userId             String            // Cliente registrado
+  stylistId          String
+  serviceId          String
+  dateTime           DateTime
+  endTime            DateTime
+  status             AppointmentStatus @default(CONFIRMED)
+  discountApplied    Decimal           @default(0.00) @db.Decimal(10, 2)
+  isFifthCutPromo    Boolean           @default(false) // Indica si se aplicó el beneficio de cliente fiel
+  notes              String?
+  user               User              @relation(fields: [userId], references: [id])
+  stylist            Stylist           @relation(fields: [stylistId], references: [id])
+  service            Service           @relation(fields: [serviceId], references: [id])
+  sale               Sale?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 }
 
-model Appointment {
-  id            String            @id @default(uuid())
-  token         String            @unique @default(cuid()) // Token de acceso público
-  customerId    String
-  stylistId     String
-  serviceId     String
-  dateTime      DateTime
-  endTime       DateTime
-  status        AppointmentStatus @default(CONFIRMED)
-  notes         String?
-  customer      Customer          @relation(fields: [customerId], references: [id])
-  stylist       Stylist           @relation(fields: [stylistId], references: [id])
-  service       Service           @relation(fields: [serviceId], references: [id])
-  sale          Sale?
-  createdAt     DateTime          @default(now())
+model LoyaltyHistory {
+  id          String      @id @default(uuid())
+  userId      String
+  points      Int         // Positivo al ganar puntos, negativo al canjear
+  reason      String      // Ej: "Cita completada", "Compra de cera fijadora", "Descuento 5to corte"
+  rewardType  RewardType?
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
 }
 
 model Sale {
   id            String       @id @default(uuid())
-  customerId    String?
+  userId        String?
   appointmentId String?      @unique
+  subtotal      Decimal      @db.Decimal(10, 2)
+  discount      Decimal      @default(0.00) @db.Decimal(10, 2)
   total         Decimal      @db.Decimal(10, 2)
-  customer      Customer?    @relation(fields: [customerId], references: [id])
+  pointsAwarded Int          @default(0)
+  pointsUsed    Int          @default(0)
+  user          User?        @relation(fields: [userId], references: [id])
   appointment   Appointment? @relation(fields: [appointmentId], references: [id])
   items         SaleItem[]
   createdAt     DateTime     @default(now())
@@ -176,7 +229,7 @@ model SaleItem {
 }
 
 ================================================================================
-5. LÓGICA DE DISPONIBILIDAD Y TURNOS (BACKEND)
+6. LÓGICA DE DISPONIBILIDAD Y TURNOS (BACKEND)
 ================================================================================
 
 Algoritmo de cálculo de horarios:
@@ -190,41 +243,50 @@ Algoritmo de cálculo de horarios:
    O donde el intervalo [HoraSlot, HoraSlot + DuraciónServicio] se solape con cualquier cita existente.
 7. Retornar al frontend la lista de slots disponibles en formato ["09:00", "09:30", "11:00", ...].
 
+Lógica al Completar una Cita (Completar Cita -> COMPLETED):
+1. Incrementar el contador `completedCuts` del cliente si el servicio aplica (`countsForFidelity = true`).
+2. Si `completedCuts` llega a 5:
+   * Activar bono/cupón automático para el próximo corte o registrar la recompensa en `LoyaltyHistory`.
+   * Reiniciar contador a 0 o ciclar a múltiplos de 5.
+3. Otorgar puntos calculados en base al monto final pagado.
+
 ================================================================================
-6. ARQUITECTURA DE SOFTWARE Y ESTRUCTURA DEL PROYECTO
+7. ARQUITECTURA DE SOFTWARE Y ESTRUCTURA DEL PROYECTO
 ================================================================================
 
-6.1. Backend (Node.js + Express / TypeScript)
+7.1. Backend (Node.js + Express / TypeScript)
 - src/
   ├── config/        (Conexión a Prisma, variables de entorno)
-  ├── controllers/   (Lógica de petición/respuesta: auth, appointments, products, stylists)
-  ├── services/      (Lógica de negocio: availabilityService, bookingService, salesService)
-  ├── middlewares/   (Validación de datos, authGuard con JWT para admin)
-  ├── routes/        (Rutas públicas de reserva y rutas protegidas de administración)
+  ├── controllers/   (authController, appointmentsController, loyaltyController, productsController, stylistsController)
+  ├── services/      (availabilityService, loyaltyService, bookingService, salesService)
+  ├── middlewares/   (authGuard con JWT, roleGuard para ADMIN/STAFF/CLIENT)
+  ├── routes/        (authRoutes, clientRoutes, adminRoutes)
   └── server.ts
 
-6.2. Frontend (React + Vite / Tailwind CSS - Monocromático)
+7.2. Frontend (React + Vite / Tailwind CSS - Monocromático)
 - src/
   ├── components/
-  │   ├── client/    (WizardStepService, WizardStepStylist, WizardStepDateTime, WizardSummary)
-  │   ├── admin/     (CalendarView, StylistForm, ProductTable, QuickSaleModal)
-  │   └── ui/        (Button, Modal, Card, Dropdown, Layouts en B&W)
+  │   ├── auth/      (LoginForm, RegisterForm, AuthModal)
+  │   ├── client/    (LoyaltyCard, WizardStepService, WizardStepStylist, WizardStepDateTime, BookingSummary)
+  │   ├── admin/     (CalendarView, CustomerLoyaltyTable, ProductTable, QuickSaleModal)
+  │   └── ui/        (Button, Modal, Card, ProgressBar, Badge en B&W)
   ├── layouts/
-  │   ├── PublicLayout.tsx   (Barra minimalista oscura/clara, estética mobile-friendly)
-  │   └── AdminLayout.tsx    (Sidebar negra con bordes sutiles, header con perfil)
+  │   ├── PublicLayout.tsx   (Barra minimalista, auth buttons, mobile-friendly)
+  │   ├── ClientLayout.tsx   (Navegación del perfil del cliente: Mis Citas, Tarjeta de Fidelidad, Puntos)
+  │   └── AdminLayout.tsx    (Sidebar negra con bordes sutiles, métricas y control general)
   ├── pages/
-  │   ├── client/    (HomePage, BookingPage, AppointmentStatusPage)
-  │   └── admin/     (DashboardPage, CalendarPage, ProductsPage, ServicesPage, StaffPage)
-  ├── services/      (Cliente API Axios/Fetch)
-  └── hooks/         (Custom hooks para llamadas con React Query)
+  │   ├── client/    (HomePage, LoginPage, RegisterPage, BookingPage, ProfileLoyaltyPage, MyAppointmentsPage)
+  │   └── admin/     (DashboardPage, CalendarPage, CustomersLoyaltyPage, ProductsPage, ServicesPage, StaffPage)
+  ├── services/      (Cliente API Axios con interceptor de token JWT)
+  └── hooks/         (Custom hooks: useAuth, useLoyalty, useAppointments con TanStack Query)
 
 ================================================================================
-7. PLAN DE DESPLIEGUE (RENDER + SUPABASE)
+8. PLAN DE DESPLIEGUE (RENDER + SUPABASE)
 ================================================================================
 
 Paso 1: Configuración en Supabase
 - Crear un nuevo proyecto en Supabase.
-- Obtener la connection string para Transaction Pooler (DATABASE_URL) y Direct Connection (DIRECT_URL).
+- Obtener DATABASE_URL (Transaction Pooler) y DIRECT_URL (Direct Connection).
 - Ejecutar migraciones con Prisma (`npx prisma migrate deploy`).
 
 Paso 2: Despliegue de Backend en Render
