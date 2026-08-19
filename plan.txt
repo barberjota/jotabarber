@@ -1,0 +1,245 @@
+================================================================================
+ARQUITECTURA Y ESPECIFICACIÓN TÉCNICA - SISTEMA DE GESTIÓN PARA PELUQUERÍA
+================================================================================
+
+1. RESUMEN DEL PROYECTO
+--------------------------------------------------------------------------------
+Desarrollo de una plataforma web integral para peluquería/barbería enfocada en:
+- Reserva ágil de citas para clientes sin fricción (Guest Checkout sin cuenta).
+- Gestión administrativa modular (agenda, personal, servicios, catálogo de productos e inventario).
+- Identidad Visual / Estilo: Monocromático de alto contraste (Negro y Blanco / Minimalista & Dark Luxe).
+- Stack Tecnológico: React + Prisma ORM + PostgreSQL (Supabase) + Despliegue en Render.
+
+================================================================================
+2. IDENTIDAD VISUAL Y PALETA DE COLORES (MONOCROMÁTICO NEGRO Y BLANCO)
+================================================================================
+
+2.1. Directrices de Diseño (Black & White Minimalist)
+- Fondos Principales: #000000 (Negro puro) / #0A0A0A (Negro profundo) / #FFFFFF (Blanco puro para contrastes).
+- Superficies y Cards: #121212 / #18181B (Gris grafito ultra oscuro con bordes sutiles #27272A).
+- Tipografía y Textos:
+    * Primario: #FFFFFF (Blanco puro para títulos y elementos destacados).
+    * Secundario / Muted: #A1A1AA / #71717A (Gris claro/medio para descripciones y metadatos).
+- Botones y Llamados a la Acción (CTA):
+    * Primario: Fondo #FFFFFF con texto #000000 (Alto contraste e impacto). Hover: #E4E4E7.
+    * Secundario / Outline: Fondo transparente con borde 1px sólido #FFFFFF y texto #FFFFFF.
+- Estados de Cita (Acentos neutros):
+    * Confirmada: Badge fondo #FFFFFF con texto #000000.
+    * Pendiente: Badge con borde punteado/sólido #A1A1AA y texto #A1A1AA.
+    * Cancelada: Badge con texto tachado o gris oscuro atenuado #52525B.
+
+================================================================================
+3. FLUJO DE NEGOCIO Y EXPERIENCIA DE USUARIO (UX/UI)
+================================================================================
+
+3.1. Vista Pública / Cliente (Mobile-First / Tema Oscuro Elegante)
+- Landing Page informativa con catálogo visual de servicios y productos en estética monocromática.
+- Wizard de Reserva en 4 pasos:
+    Paso 1: Selección de Servicio (Corte normal, asesoría, barba, etc. con precio y duración).
+    Paso 2: Selección de Barbero/Estilista (o asignación automática/cualquiera disponible).
+    Paso 3: Selección de Fecha y Horario disponible (calculado dinámicamente según duración).
+    Paso 4: Datos de Contacto (Nombre completo y Teléfono/WhatsApp).
+- Confirmación y Gestión:
+    Generación de un token único por cita (URL: /cita/:token) donde el cliente puede consultar
+    el estado, reprogramar o cancelar su cita sin necesidad de autenticarse con contraseña.
+
+3.2. Vista Administrativa / Panel Dashboard (Desktop-First / Layout Negro & Blanco)
+- Autenticación segura mediante credenciales (Email / Password + JWT o Supabase Auth).
+- Layout con Sidebar oscura (#0A0A0A) y navegación modular:
+    * Dashboard: Indicadores del día (citas pendientes, ingresos estimados, servicios más solicitados).
+    * Agenda / Calendario: Vista tipo día/semana con filtros por estilista y registro de citas manuales.
+    * Servicios: CRUD de servicios, duración en minutos y tarifas.
+    * Estilistas / Personal: Gestión de barberos, fotos, días de descanso y horarios de atención.
+    * Productos / Stock: Catálogo de productos (ceras, fijadores, etc.), inventario y registro de ventas.
+    * Configuración: Días no laborables, intervalos de turnos y parámetros del local.
+
+================================================================================
+4. MODELO DE BASE DE DATOS (ESQUEMA PRISMA / POSTGRESQL)
+================================================================================
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+}
+
+model Stylist {
+  id           String             @id @default(uuid())
+  name         String
+  photoUrl     String?
+  isActive     Boolean            @default(true)
+  appointments Appointment[]
+  schedules    StylistSchedule[]
+}
+
+model StylistSchedule {
+  id        String  @id @default(uuid())
+  stylistId String
+  dayOfWeek Int     // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+  startTime String  // Ej: "09:00"
+  endTime   String  // Ej: "19:00"
+  stylist   Stylist @relation(fields: [stylistId], references: [id], onDelete: Cascade)
+}
+
+model Service {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  durationMin  Int           // Duración en minutos (ej: 30, 45, 60)
+  price        Decimal       @db.Decimal(10, 2)
+  isActive     Boolean       @default(true)
+  appointments Appointment[]
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal     @db.Decimal(10, 2)
+  stock       Int         @default(0)
+  imageUrl    String?
+  isActive    Boolean     @default(true)
+  saleItems   SaleItem[]
+}
+
+model Customer {
+  id           String        @id @default(uuid())
+  name         String
+  phone        String        @unique
+  email        String?
+  appointments Appointment[]
+  sales        Sale[]
+  createdAt    DateTime      @default(now())
+}
+
+model Appointment {
+  id            String            @id @default(uuid())
+  token         String            @unique @default(cuid()) // Token de acceso público
+  customerId    String
+  stylistId     String
+  serviceId     String
+  dateTime      DateTime
+  endTime       DateTime
+  status        AppointmentStatus @default(CONFIRMED)
+  notes         String?
+  customer      Customer          @relation(fields: [customerId], references: [id])
+  stylist       Stylist           @relation(fields: [stylistId], references: [id])
+  service       Service           @relation(fields: [serviceId], references: [id])
+  sale          Sale?
+  createdAt     DateTime          @default(now())
+}
+
+model Sale {
+  id            String       @id @default(uuid())
+  customerId    String?
+  appointmentId String?      @unique
+  total         Decimal      @db.Decimal(10, 2)
+  customer      Customer?    @relation(fields: [customerId], references: [id])
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+  items         SaleItem[]
+  createdAt     DateTime     @default(now())
+}
+
+model SaleItem {
+  id        String   @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Int
+  unitPrice Decimal  @db.Decimal(10, 2)
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+================================================================================
+5. LÓGICA DE DISPONIBILIDAD Y TURNOS (BACKEND)
+================================================================================
+
+Algoritmo de cálculo de horarios:
+1. Entrada: stylistId, serviceId, date (YYYY-MM-DD).
+2. Obtener duración del servicio desde la tabla Service (durationMin).
+3. Obtener el horario de trabajo del estilista para el día de la semana correspondiente (StylistSchedule).
+4. Obtener todas las citas existentes no canceladas del estilista para esa fecha.
+5. Generar bloques de tiempo (ej. intervalos de 30 o 15 minutos) desde startTime hasta endTime.
+6. Descartar bloques donde:
+   (HoraSlot + DuraciónServicio) > HoraFinJornada
+   O donde el intervalo [HoraSlot, HoraSlot + DuraciónServicio] se solape con cualquier cita existente.
+7. Retornar al frontend la lista de slots disponibles en formato ["09:00", "09:30", "11:00", ...].
+
+================================================================================
+6. ARQUITECTURA DE SOFTWARE Y ESTRUCTURA DEL PROYECTO
+================================================================================
+
+6.1. Backend (Node.js + Express / TypeScript)
+- src/
+  ├── config/        (Conexión a Prisma, variables de entorno)
+  ├── controllers/   (Lógica de petición/respuesta: auth, appointments, products, stylists)
+  ├── services/      (Lógica de negocio: availabilityService, bookingService, salesService)
+  ├── middlewares/   (Validación de datos, authGuard con JWT para admin)
+  ├── routes/        (Rutas públicas de reserva y rutas protegidas de administración)
+  └── server.ts
+
+6.2. Frontend (React + Vite / Tailwind CSS - Monocromático)
+- src/
+  ├── components/
+  │   ├── client/    (WizardStepService, WizardStepStylist, WizardStepDateTime, WizardSummary)
+  │   ├── admin/     (CalendarView, StylistForm, ProductTable, QuickSaleModal)
+  │   └── ui/        (Button, Modal, Card, Dropdown, Layouts en B&W)
+  ├── layouts/
+  │   ├── PublicLayout.tsx   (Barra minimalista oscura/clara, estética mobile-friendly)
+  │   └── AdminLayout.tsx    (Sidebar negra con bordes sutiles, header con perfil)
+  ├── pages/
+  │   ├── client/    (HomePage, BookingPage, AppointmentStatusPage)
+  │   └── admin/     (DashboardPage, CalendarPage, ProductsPage, ServicesPage, StaffPage)
+  ├── services/      (Cliente API Axios/Fetch)
+  └── hooks/         (Custom hooks para llamadas con React Query)
+
+================================================================================
+7. PLAN DE DESPLIEGUE (RENDER + SUPABASE)
+================================================================================
+
+Paso 1: Configuración en Supabase
+- Crear un nuevo proyecto en Supabase.
+- Obtener la connection string para Transaction Pooler (DATABASE_URL) y Direct Connection (DIRECT_URL).
+- Ejecutar migraciones con Prisma (`npx prisma migrate deploy`).
+
+Paso 2: Despliegue de Backend en Render
+- Crear un Web Service conectado al repositorio GitHub.
+- Configurar variables de entorno: DATABASE_URL, DIRECT_URL, JWT_SECRET, PORT, CORS_ORIGIN.
+- Build Command: `npm install && npx prisma generate && npm run build`
+- Start Command: `npm start`
+
+Paso 3: Despliegue de Frontend en Render
+- Crear un Static Site conectado al repositorio GitHub.
+- Build Command: `npm install && npm run build`
+- Publish Directory: `dist`
+- Configurar variable: `VITE_API_URL` apuntando a la URL del backend en Render.
+- Configurar Rewrite Rules para SPA (Redirigir /* a /index.html).
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

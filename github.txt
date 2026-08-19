@@ -1,0 +1,7 @@
+git init
+git add .
+git commit -m "TEXTO"
+git branch -M main
+# Usa la URL del repositorio de la PELUQUERIA:
+git remote add origin https://github.com/barberjota/jotabarber.git
+git push -u origin main
