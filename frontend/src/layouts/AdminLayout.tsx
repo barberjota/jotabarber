@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
@@ -12,12 +12,14 @@ import {
   Package,
   LogOut,
   Sliders,
+  MoreHorizontal,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
   const { user, token, loading, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && (!token || (user && user.role !== 'ADMIN' && user.role !== 'STAFF'))) {
@@ -209,16 +211,94 @@ export const AdminLayout: React.FC = () => {
           <ShoppingBag size={18} />
           <span>Ventas</span>
         </Link>
-        <Link
-          to="/admin/clientes"
+        <button
+          type="button"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
-            isActive('/admin/clientes') ? 'text-white' : 'text-zinc-500'
+            isMobileMenuOpen ? 'text-white' : 'text-zinc-500'
           }`}
         >
-          <Users size={18} />
-          <span>Clientes</span>
-        </Link>
+          <MoreHorizontal size={18} />
+          <span>Más</span>
+        </button>
       </div>
+
+      {/* Menú Móvil "Más" Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-end" 
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div 
+            className="bg-zinc-950 border-t border-zinc-900 p-6 space-y-4 pb-12"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-zinc-900 pb-3">
+              <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Más Opciones</span>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)} 
+                className="text-zinc-500 hover:text-white text-xs uppercase tracking-widest"
+              >
+                Cerrar
+              </button>
+            </div>
+            
+            <nav className="flex flex-col gap-2">
+              <Link
+                to="/admin/clientes"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-semibold border ${
+                  isActive('/admin/clientes')
+                    ? 'bg-white text-black border-white'
+                    : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                }`}
+              >
+                <Users size={16} /> Clientes & Fidelidad
+              </Link>
+
+              {isAdmin && (
+                <>
+                  <Link
+                    to="/admin/servicios"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-semibold border ${
+                      isActive('/admin/servicios')
+                        ? 'bg-white text-black border-white'
+                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                    }`}
+                  >
+                    <Scissors size={16} /> Servicios
+                  </Link>
+
+                  <Link
+                    to="/admin/estilistas"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-semibold border ${
+                      isActive('/admin/estilistas')
+                        ? 'bg-white text-black border-white'
+                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                    }`}
+                  >
+                    <UserCheck size={16} /> Personal (Barberos)
+                  </Link>
+
+                  <Link
+                    to="/admin/productos"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-semibold border ${
+                      isActive('/admin/productos')
+                        ? 'bg-white text-black border-white'
+                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                    }`}
+                  >
+                    <Package size={16} /> Productos (Stock)
+                  </Link>
+                </>
+              )}
+            </nav>
+          </div>
+        </div>
+      )}
 
       {/* Main Panel Content Area */}
       <section className="flex-grow p-6 md:p-8 pb-24 md:pb-8 overflow-y-auto max-h-screen">
