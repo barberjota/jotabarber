@@ -34,8 +34,29 @@ export const AdminLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-darkBg text-zinc-100 flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-black border-r border-zinc-900 flex flex-col justify-between p-6 flex-shrink-0">
+      {/* Cabecera Superior para Móvil */}
+      <header className="md:hidden h-16 bg-black border-b border-zinc-900 flex items-center justify-between px-6 z-40 sticky top-0">
+        <Link to="/" className="flex items-center gap-2">
+          <img src="/branding/logo.png" alt="JotaBarber Logo" className="h-8 w-auto object-contain" />
+          <span className="text-[9px] bg-white text-black px-1.5 py-0.5 uppercase tracking-wider font-bold">Admin</span>
+        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <button
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
+            className="text-zinc-500 hover:text-red-400 p-1 flex items-center justify-center transition-colors"
+            title="Cerrar Sesión"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+      </header>
+
+      {/* Sidebar para Escritorio */}
+      <aside className="hidden md:flex w-64 bg-black border-r border-zinc-900 flex-col justify-between p-6 flex-shrink-0">
         <div className="space-y-8">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
@@ -159,8 +180,48 @@ export const AdminLayout: React.FC = () => {
         </div>
       </aside>
 
+      {/* Barra de Navegación Inferior para Móvil (4 Botones Importantes) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-900 flex items-center justify-around py-2 z-50">
+        <Link
+          to="/admin/dashboard"
+          className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
+            isActive('/admin/dashboard') ? 'text-white' : 'text-zinc-500'
+          }`}
+        >
+          <LayoutDashboard size={18} />
+          <span>Dashboard</span>
+        </Link>
+        <Link
+          to="/admin/agenda"
+          className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
+            isActive('/admin/agenda') ? 'text-white' : 'text-zinc-500'
+          }`}
+        >
+          <Calendar size={18} />
+          <span>Agenda</span>
+        </Link>
+        <Link
+          to="/admin/ventas"
+          className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
+            isActive('/admin/ventas') ? 'text-white' : 'text-zinc-500'
+          }`}
+        >
+          <ShoppingBag size={18} />
+          <span>Ventas</span>
+        </Link>
+        <Link
+          to="/admin/clientes"
+          className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
+            isActive('/admin/clientes') ? 'text-white' : 'text-zinc-500'
+          }`}
+        >
+          <Users size={18} />
+          <span>Clientes</span>
+        </Link>
+      </div>
+
       {/* Main Panel Content Area */}
-      <section className="flex-grow p-6 md:p-8 overflow-y-auto max-h-screen">
+      <section className="flex-grow p-6 md:p-8 pb-24 md:pb-8 overflow-y-auto max-h-screen">
         <Outlet />
       </section>
     </div>

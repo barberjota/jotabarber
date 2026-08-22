@@ -187,7 +187,7 @@ export const ProductTable: React.FC = () => {
                         <span className="text-[10px] text-zinc-500 line-clamp-1">{p.description || 'Sin descripción'}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-right font-bold text-white font-mono">${Number(p.price).toFixed(2)}</td>
+                    <td className="p-3 text-right font-bold text-white font-mono">Bs. {Number(p.price).toFixed(2)}</td>
                     <td className="p-3 text-center font-mono text-zinc-300">
                       {p.pointsCost ? `${p.pointsCost} PTS` : <span className="text-zinc-600">—</span>}
                     </td>
@@ -285,7 +285,7 @@ export const ProductTable: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1 font-medium">Precio ($)</label>
+              <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1 font-medium">Precio (Bs.)</label>
               <input
                 type="number"
                 step="0.01"

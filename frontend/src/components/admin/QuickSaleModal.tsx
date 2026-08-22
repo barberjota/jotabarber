@@ -270,7 +270,7 @@ export const QuickSaleModal: React.FC<QuickSaleModalProps> = ({
                     <option value="">Seleccione...</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} - ${Number(p.price).toFixed(2)} (Stock: {p.stock})
+                        {p.name} - Bs. {Number(p.price).toFixed(2)} (Stock: {p.stock})
                       </option>
                     ))}
                   </select>
@@ -302,7 +302,7 @@ export const QuickSaleModal: React.FC<QuickSaleModalProps> = ({
 
             {/* Descuento Manual */}
             <div className="border-t border-zinc-900 pt-4">
-              <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-medium">Descuento Especial ($)</label>
+              <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-medium">Descuento Especial (Bs.)</label>
               <input
                 type="number"
                 min="0"
@@ -330,11 +330,11 @@ export const QuickSaleModal: React.FC<QuickSaleModalProps> = ({
                         <div>
                           <span className="font-bold text-white uppercase tracking-wider">{item.product.name}</span>
                           <span className="text-[10px] text-zinc-500 block mt-0.5">
-                            {item.quantity} x ${price.toFixed(2)}
+                            {item.quantity} x Bs. {price.toFixed(2)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-white font-mono">${(price * item.quantity).toFixed(2)}</span>
+                          <span className="font-bold text-white font-mono">Bs. {(price * item.quantity).toFixed(2)}</span>
                           <button
                             type="button"
                             onClick={() => handleRemoveFromCart(idx)}
@@ -355,17 +355,17 @@ export const QuickSaleModal: React.FC<QuickSaleModalProps> = ({
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between text-zinc-500">
                   <span>Subtotal</span>
-                  <span className="font-mono">${calculateSubtotal().toFixed(2)}</span>
+                  <span className="font-mono">Bs. {calculateSubtotal().toFixed(2)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between text-zinc-400">
                     <span>Descuento</span>
-                    <span className="font-mono">-${discount.toFixed(2)}</span>
+                    <span className="font-mono">-Bs. {discount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-white font-bold text-sm border-t border-zinc-900 pt-1.5 uppercase tracking-wide">
                   <span>Total Neto</span>
-                  <span className="font-mono text-white">${calculateTotal().toFixed(2)}</span>
+                  <span className="font-mono text-white">Bs. {calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
 

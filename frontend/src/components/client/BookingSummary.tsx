@@ -122,7 +122,7 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
         <div className="border-t border-zinc-900 pt-4 space-y-2">
           <div className="flex justify-between text-xs uppercase tracking-wider text-zinc-400">
             <span>Precio del Servicio</span>
-            <span>${price.toFixed(2)}</span>
+            <span>Bs. {price.toFixed(2)}</span>
           </div>
 
           {isPromoApplied && (
@@ -130,13 +130,13 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
               <span className="flex items-center gap-1 text-white">
                 <Sparkles size={12} className="animate-pulse" /> Descuento 5to Corte (100%)
               </span>
-              <span className="text-white">-${price.toFixed(2)}</span>
+              <span className="text-white">-Bs. {price.toFixed(2)}</span>
             </div>
           )}
 
           <div className="flex justify-between text-sm uppercase tracking-widest border-t border-zinc-900 pt-2 font-bold text-white">
             <span>Total a Pagar</span>
-            <span>${total.toFixed(2)}</span>
+            <span>Bs. {total.toFixed(2)}</span>
           </div>
         </div>
       </Card>

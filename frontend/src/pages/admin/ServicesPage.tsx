@@ -158,7 +158,7 @@ export const ServicesPage: React.FC = () => {
                     <p className="text-[11px] text-zinc-400 mt-1 h-10 overflow-hidden line-clamp-2">{s.description || 'Sin descripción'}</p>
                   </div>
                   <div className="text-right">
-                    <span className="font-mono text-white text-base font-bold">${Number(s.price).toFixed(2)}</span>
+                    <span className="font-mono text-white text-base font-bold">Bs. {Number(s.price).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -224,7 +224,7 @@ export const ServicesPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1 font-medium">Precio ($)</label>
+              <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1 font-medium">Precio (Bs.)</label>
               <input
                 type="number"
                 step="0.01"

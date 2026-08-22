@@ -79,11 +79,11 @@ export const WizardStepService: React.FC<WizardStepServiceProps> = ({
                   <div className="text-right">
                     {appliesForPromo ? (
                       <div className="flex flex-col items-end">
-                        <span className="text-xs line-through text-zinc-500">${servicePrice.toFixed(2)}</span>
+                        <span className="text-xs line-through text-zinc-500">Bs. {servicePrice.toFixed(2)}</span>
                         <span className="text-sm font-bold text-white uppercase tracking-wider">¡GRATIS!</span>
                       </div>
                     ) : (
-                      <span className="text-sm font-bold text-white">${servicePrice.toFixed(2)}</span>
+                      <span className="text-sm font-bold text-white">Bs. {servicePrice.toFixed(2)}</span>
                     )}
                   </div>
                 </div>

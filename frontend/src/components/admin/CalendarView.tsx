@@ -381,11 +381,11 @@ Detalles de tu turno:
                       <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-medium">Cobro</span>
                       {discount > 0 ? (
                         <div>
-                          <span className="text-xs line-through text-zinc-600 font-mono mr-1.5">${price.toFixed(2)}</span>
-                          <span className="text-sm font-bold text-white font-mono">${total.toFixed(2)}</span>
+                          <span className="text-xs line-through text-zinc-600 font-mono mr-1.5">Bs. {price.toFixed(2)}</span>
+                          <span className="text-sm font-bold text-white font-mono">Bs. {total.toFixed(2)}</span>
                         </div>
                       ) : (
-                        <span className="text-sm font-bold text-white font-mono">${total.toFixed(2)}</span>
+                        <span className="text-sm font-bold text-white font-mono">Bs. {total.toFixed(2)}</span>
                       )}
                     </div>
 
@@ -505,7 +505,7 @@ Detalles de tu turno:
               >
                 {services.map((sv) => (
                   <option key={sv.id} value={sv.id}>
-                    {sv.name} (${Number(sv.price).toFixed(2)})
+                    {sv.name} (Bs. {Number(sv.price).toFixed(2)})
                   </option>
                 ))}
               </select>

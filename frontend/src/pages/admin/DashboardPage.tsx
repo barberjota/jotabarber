@@ -69,7 +69,7 @@ export const DashboardPage: React.FC = () => {
         <Card className="flex items-center justify-between p-4">
           <div>
             <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold block">Ingresos Totales</span>
-            <span className="text-xl font-bold font-mono text-white mt-1 block">${metrics.revenue.toFixed(2)}</span>
+            <span className="text-xl font-bold font-mono text-white mt-1 block">Bs. {metrics.revenue.toFixed(2)}</span>
           </div>
           <div className="bg-white text-black p-2"><DollarSign size={16} /></div>
         </Card>
@@ -184,7 +184,7 @@ export const DashboardPage: React.FC = () => {
                       <td className="p-3 text-zinc-500 font-mono">{s.id.substring(0, 8)}...</td>
                       <td className="p-3 font-semibold text-zinc-300 uppercase tracking-wider">{s.clientName}</td>
                       <td className="p-3 font-mono text-zinc-500">{sDate}</td>
-                      <td className="p-3 text-right font-bold text-white font-mono">${s.total.toFixed(2)}</td>
+                      <td className="p-3 text-right font-bold text-white font-mono">Bs. {s.total.toFixed(2)}</td>
                     </tr>
                   );
                 })}

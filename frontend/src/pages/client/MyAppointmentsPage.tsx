@@ -215,7 +215,7 @@ export const MyAppointmentsPage: React.FC = () => {
                           <td className="p-3 text-center">
                             <Badge variant={getStatusVariant(appt.status)}>{getStatusText(appt.status)}</Badge>
                           </td>
-                          <td className="p-3 text-right font-mono font-bold text-zinc-300">${paid.toFixed(2)}</td>
+                          <td className="p-3 text-right font-mono font-bold text-zinc-300">Bs. {paid.toFixed(2)}</td>
                         </tr>
                       );
                     })}

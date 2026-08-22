@@ -168,7 +168,7 @@ export const HomePage: React.FC = () => {
                 <div>
                   <div className="flex justify-between items-start">
                     <h3 className="font-bold text-white uppercase text-xs tracking-wider">{service.name}</h3>
-                    <span className="font-mono text-white text-xs font-bold">${Number(service.price).toFixed(2)}</span>
+                    <span className="font-mono text-white text-xs font-bold">Bs. {Number(service.price).toFixed(2)}</span>
                   </div>
                   <p className="text-[11px] text-zinc-400 mt-2 leading-relaxed">{service.description || 'Experiencia premium garantizada.'}</p>
                 </div>
