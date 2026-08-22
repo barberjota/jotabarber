@@ -26,11 +26,9 @@ export const ClientLayout: React.FC = () => {
       {/* Header */}
       <header className="border-b border-zinc-900 bg-black/60 sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="bg-white text-black p-1">
-              <Scissors size={16} />
-            </div>
-            <span className="font-bold tracking-widest text-xs uppercase text-white">JotaBarber Portal</span>
+          <Link to="/" className="flex items-center gap-2 group">
+            <img src="/branding/logo.png" alt="JotaBarber Logo" className="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+            <span className="text-[9px] bg-white text-black px-1 py-0.5 uppercase tracking-wider font-bold">Inicio</span>
           </Link>
           <div className="flex items-center gap-3">
             <span className="text-[10px] text-zinc-500 uppercase tracking-widest hidden sm:inline">Hola, {user.name}</span>

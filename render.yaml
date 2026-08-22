@@ -1,0 +1,46 @@
+services:
+  # Servicio Backend (API)
+  - type: web
+    name: jotabarber-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+  # Servicio Frontend (Static Site)
+  - type: web
+    name: jotabarber-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: max-age=31536000
+    routes:
+      - type: rewrite
+        src: /*
+        dest: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false

@@ -173,13 +173,17 @@ export const BookingPage: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Wizard Header Progress */}
       <div className="flex items-center justify-between border-b border-zinc-900 pb-4 mb-8">
-        <button
-          onClick={() => step > 1 && setStep((s) => s - 1)}
-          disabled={step === 1}
-          className="text-xs uppercase tracking-widest text-zinc-500 hover:text-white flex items-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-        >
-          <ArrowLeft size={14} /> Volver
-        </button>
+        {step > 1 ? (
+          <button
+            type="button"
+            onClick={() => setStep((s) => s - 1)}
+            className="text-xs uppercase tracking-widest text-zinc-500 hover:text-white flex items-center gap-1 transition-colors cursor-pointer relative z-30"
+          >
+            <ArrowLeft size={14} /> Volver
+          </button>
+        ) : (
+          <div className="w-16 h-4" />
+        )}
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-zinc-400 font-semibold">
           <span className={step >= 1 ? 'text-white' : ''}>Servicio</span>
           <ChevronRight size={10} className="text-zinc-700" />

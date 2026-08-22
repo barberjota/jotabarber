@@ -7,6 +7,7 @@ import { createProduct, updateProduct, deleteProduct } from '../controllers/prod
 import { getBookings, createBooking, updateBookingStatus, cancelBooking, updateBooking, deleteBooking } from '../controllers/appointmentsController';
 import { getSales, createSale, getDashboardMetrics } from '../controllers/salesController';
 import { getCustomersList, adjustLoyaltyManual } from '../controllers/loyaltyController';
+import { uploadMiddleware, uploadImage } from '../controllers/uploadController';
 import { Rol } from '@prisma/client';
 
 const router = Router();
@@ -14,6 +15,9 @@ const router = Router();
 // Todas las rutas administrativas requieren autenticación y rol STAFF o ADMIN
 router.use(authGuard);
 router.use(roleGuard([Rol.STAFF, Rol.ADMIN]));
+
+// Carga de imágenes (Cloudinary)
+router.post('/upload', uploadMiddleware.single('image'), uploadImage);
 
 // Citas y Agenda (STAFF/ADMIN)
 router.get('/appointments', getBookings);

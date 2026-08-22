@@ -47,6 +47,29 @@ export const StaffPage: React.FC = () => {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('19:00');
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const res = await api.post('/admin/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setPhotoUrl(res.data.url);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al subir la imagen a Cloudinary');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const fetchStylists = async () => {
     setLoading(true);
@@ -268,14 +291,24 @@ export const StaffPage: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1 font-medium">URL de Fotografía</label>
-              <input
-                type="text"
-                value={photoUrl}
-                placeholder="https://ejemplo.com/barbero.jpg"
-                onChange={(e) => setPhotoUrl(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none"
-              />
+              <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1 font-medium">Fotografía del Barbero</label>
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                  className="w-full text-xs text-zinc-400 file:mr-4 file:py-1 file:px-3 file:border file:border-zinc-800 file:bg-zinc-950 file:text-zinc-300 file:cursor-pointer hover:file:border-zinc-600 disabled:opacity-50"
+                />
+                {uploading && <div className="text-[10px] uppercase tracking-wider text-zinc-500 animate-pulse">Subiendo a Cloudinary...</div>}
+                <input
+                  type="text"
+                  value={photoUrl}
+                  placeholder="https://ejemplo.com/barbero.jpg"
+                  onChange={(e) => setPhotoUrl(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none"
+                />
+              </div>
             </div>
           </div>
 

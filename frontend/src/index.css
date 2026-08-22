@@ -20,6 +20,7 @@
   --color-zinc-800: 228 228 231;
   --color-zinc-900: 244 244 245;
   --color-zinc-950: 255 255 255;
+  --calendar-invert: 0;
 }
 
 html.dark {
@@ -40,12 +41,24 @@ html.dark {
   --color-zinc-800: 39 39 42;
   --color-zinc-900: 24 24 27;
   --color-zinc-950: 9 9 11;
+  --calendar-invert: 1;
 }
 
 @layer base {
   body {
     @apply bg-darkBg text-zinc-100 transition-colors duration-200 selection:bg-white selection:text-black;
   }
+}
+
+/* Asegurar legibilidad en dropdowns option */
+select option {
+  background-color: rgb(var(--color-darkSurface)) !important;
+  color: rgb(var(--color-white)) !important;
+}
+
+/* Asegurar legibilidad de inputs de fecha y selectores */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(var(--calendar-invert));
 }
 
 /* Scrollbars B&W */

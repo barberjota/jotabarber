@@ -34,11 +34,8 @@ export const PublicLayout: React.FC = () => {
       {/* Header */}
       <header className="border-b border-zinc-900 bg-black/60 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="bg-white text-black p-1 group-hover:scale-105 transition-transform">
-              <Scissors size={18} />
-            </div>
-            <span className="font-bold tracking-widest text-sm uppercase text-white">JotaBarber</span>
+          <Link to="/" className="flex items-center group">
+            <img src="/branding/logo.png" alt="JotaBarber Logo" className="h-9 w-auto object-contain group-hover:scale-105 transition-transform" />
           </Link>
 
           <nav className="flex items-center gap-4">

@@ -38,11 +38,9 @@ export const AdminLayout: React.FC = () => {
       <aside className="w-full md:w-64 bg-black border-r border-zinc-900 flex flex-col justify-between p-6 flex-shrink-0">
         <div className="space-y-8">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="bg-white text-black p-1">
-              <Scissors size={18} />
-            </div>
-            <span className="font-bold tracking-widest text-sm uppercase text-white">JotaBarber</span>
+          <Link to="/" className="flex items-center gap-2 group">
+            <img src="/branding/logo.png" alt="JotaBarber Logo" className="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+            <span className="text-[9px] bg-white text-black px-1 py-0.5 uppercase tracking-wider font-bold">Admin</span>
           </Link>
 
           {/* User Info Bar */}

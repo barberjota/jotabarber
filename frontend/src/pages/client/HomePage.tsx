@@ -18,6 +18,17 @@ export const HomePage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Carrusel de imágenes
+  const slides = ['/slide1.webp', '/slide2.webp', '/slide3.webp'];
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
   useEffect(() => {
     const fetchServices = async () => {
       try {
@@ -34,13 +45,37 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-20 pb-20">
-      {/* Hero Section */}
+      {/* Hero Section con Carrusel */}
       <section className="relative bg-black text-white h-[80vh] flex items-center justify-center border-b border-zinc-900 overflow-hidden">
-        {/* Subtle background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/10 to-[#0A0A0A] z-0"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-white/[0.02] blur-3xl z-0 rounded-full"></div>
+        {/* Imágenes del carrusel */}
+        <div className="absolute inset-0 z-0">
+          {slides.map((slide, index) => (
+            <div
+              key={slide}
+              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{ backgroundImage: `url(${slide})` }}
+            />
+          ))}
+        </div>
 
-        <div className="relative z-10 text-center px-4 max-w-3xl space-y-6">
+        {/* Indicadores de diapositivas (Dots) */}
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2 z-20">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => setCurrentSlide(index)}
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                index === currentSlide ? 'bg-white w-4' : 'bg-white/40'
+              }`}
+              title={`Ir a imagen ${index + 1}`}
+            />
+          ))}
+        </div>
+
+        <div className="relative z-10 text-center px-6 py-10 sm:px-12 sm:py-16 max-w-2xl mx-auto bg-black/75 backdrop-blur-sm border border-zinc-800 space-y-6">
           <span className="text-[10px] sm:text-xs uppercase tracking-[0.3em] text-zinc-400 font-bold block">Estilo • Tradición • Precisión</span>
           <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none">
             JotaBarber
