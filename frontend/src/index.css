@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Modo Claro */
+  --color-white: 9 9 11;        /* Mapea blanco a texto/fondo oscuro */
+  --color-black: 255 255 255;  /* Mapea negro a texto/fondo claro */
+  --color-darkBg: 250 250 250;
+  --color-darkSurface: 255 255 255;
+  --color-darkBorder: 228 228 231;
+  --color-zinc-50: 9 9 11;
+  --color-zinc-100: 24 24 27;
+  --color-zinc-200: 39 39 42;
+  --color-zinc-300: 63 63 70;
+  --color-zinc-400: 82 82 91;
+  --color-zinc-500: 113 113 122;
+  --color-zinc-600: 161 161 170;
+  --color-zinc-700: 212 212 216;
+  --color-zinc-800: 228 228 231;
+  --color-zinc-900: 244 244 245;
+  --color-zinc-950: 255 255 255;
+}
+
+html.dark {
+  /* Modo Oscuro */
+  --color-white: 255 255 255;
+  --color-black: 9 9 11;
+  --color-darkBg: 10 10 10;
+  --color-darkSurface: 18 18 18;
+  --color-darkBorder: 39 39 42;
+  --color-zinc-50: 250 250 250;
+  --color-zinc-100: 244 244 245;
+  --color-zinc-200: 228 228 231;
+  --color-zinc-300: 212 212 216;
+  --color-zinc-400: 161 161 170;
+  --color-zinc-500: 113 113 122;
+  --color-zinc-600: 82 82 91;
+  --color-zinc-700: 63 63 70;
+  --color-zinc-800: 39 39 42;
+  --color-zinc-900: 24 24 27;
+  --color-zinc-950: 9 9 11;
+}
+
+@layer base {
+  body {
+    @apply bg-darkBg text-zinc-100 transition-colors duration-200 selection:bg-white selection:text-black;
+  }
+}
+
+/* Scrollbars B&W */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--color-darkBg));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-zinc-800));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-zinc-600));
+}
