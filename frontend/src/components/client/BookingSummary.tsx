@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { Calendar, Clock, User, Scissors, AlignLeft, Sparkles } from 'lucide-react';
+import { Calendar, Clock, User, Scissors, AlignLeft, Sparkles, Phone } from 'lucide-react';
 
 interface Service {
   id: string;
@@ -22,7 +22,7 @@ interface BookingSummaryProps {
   date: string;
   time: string;
   completedCuts: number;
-  onConfirm: (notes: string) => Promise<void>;
+  onConfirm: (clientName: string, clientPhone: string, notes: string) => Promise<void>;
   onBack: () => void;
 }
 
@@ -35,6 +35,8 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
   onConfirm,
   onBack,
 }) => {
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,10 +47,14 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
   const total = price - discount;
 
   const handleConfirm = async () => {
+    if (!clientName.trim() || !clientPhone.trim()) {
+      setError('Por favor, complete su nombre y número de teléfono.');
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
-      await onConfirm(notes);
+      await onConfirm(clientName, clientPhone, notes);
     } catch (err: any) {
       setError(err.message || 'Error al procesar la reserva. Por favor intente de nuevo.');
       setSubmitting(false);
@@ -102,6 +108,36 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
             <span className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-1">
               {date} <Clock size={12} className="text-zinc-500" /> {time}
             </span>
+          </div>
+        </div>
+
+        {/* Datos del Cliente */}
+        <div className="border-t border-zinc-900 pt-4 space-y-3">
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5">
+              <User size={14} /> Nombre Completo *
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="Ej: Juan Pérez"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none uppercase tracking-wider"
+            />
+          </div>
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1.5 font-medium flex items-center gap-1.5">
+              <Phone size={14} /> Teléfono (WhatsApp) *
+            </label>
+            <input
+              type="tel"
+              required
+              placeholder="Ej: 63938875"
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none font-mono"
+            />
           </div>
         </div>
 
