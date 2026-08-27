@@ -82,6 +82,30 @@ export const CalendarView: React.FC = () => {
   const [editSlots, setEditSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
+  // Estados para Cobrar Cita
+  const [selectedApptToCobrar, setSelectedApptToCobrar] = useState<Appointment | null>(null);
+  const [isCobrarModalOpen, setIsCobrarModalOpen] = useState(false);
+  const [apptPaymentMethod, setApptPaymentMethod] = useState<'EFECTIVO' | 'QR'>('EFECTIVO');
+  const [submittingCobro, setSubmittingCobro] = useState(false);
+
+  const handleCobrarCitaConfirm = async () => {
+    if (!selectedApptToCobrar) return;
+    setSubmittingCobro(true);
+    try {
+      await api.post(`/admin/appointments/${selectedApptToCobrar.id}/checkout`, {
+        paymentMethod: apptPaymentMethod,
+      });
+      alert('Cita cobrada y completada con éxito.');
+      setIsCobrarModalOpen(false);
+      setSelectedApptToCobrar(null);
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al cobrar la cita.');
+    } finally {
+      setSubmittingCobro(false);
+    }
+  };
+
   useEffect(() => {
     const fetchStylists = async () => {
       try {
@@ -395,12 +419,16 @@ Detalles de tu turno:
                         {appt.status === 'CONFIRMED' && (
                           <>
                             <Button
-                              onClick={() => handleUpdateStatus(appt.id, 'COMPLETED')}
+                              onClick={() => {
+                                setSelectedApptToCobrar(appt);
+                                setApptPaymentMethod('EFECTIVO');
+                                setIsCobrarModalOpen(true);
+                              }}
                               variant="primary"
                               size="sm"
                               className="flex items-center gap-1"
                             >
-                              <Check size={14} /> Completar
+                              <Check size={14} /> Cobrar
                             </Button>
                             <Button
                               onClick={() => handleCancelAppointment(appt.id)}
@@ -595,6 +623,86 @@ Detalles de tu turno:
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Modal Cobrar Cita */}
+      {isCobrarModalOpen && selectedApptToCobrar && (
+        <Modal
+          isOpen={isCobrarModalOpen}
+          onClose={() => {
+            setIsCobrarModalOpen(false);
+            setSelectedApptToCobrar(null);
+          }}
+          title="Cobrar Cita / Servicio"
+        >
+          <div className="space-y-4 text-xs">
+            <p className="text-zinc-400 text-[11px] leading-relaxed">
+              Seleccione el método de pago para registrar el cobro del servicio e ingresarlo a la caja del turno activo.
+            </p>
+
+            <div className="border border-zinc-900 bg-zinc-900/30 p-3 space-y-1.5 uppercase text-[10px]">
+              <p><span className="text-zinc-500 font-semibold">Cliente:</span> <span className="text-white font-bold">{selectedApptToCobrar.user.name}</span></p>
+              <p><span className="text-zinc-500 font-semibold">Teléfono:</span> <span className="text-zinc-300 font-mono">{selectedApptToCobrar.user.phone}</span></p>
+              <p><span className="text-zinc-500 font-semibold">Servicio:</span> <span className="text-white font-bold">{selectedApptToCobrar.service.name}</span></p>
+              <p><span className="text-zinc-500 font-semibold">Barbero:</span> <span className="text-zinc-300">{selectedApptToCobrar.stylist.name}</span></p>
+              <p><span className="text-zinc-500 font-semibold">Fecha/Hora:</span> <span className="text-zinc-300 font-mono">{new Date(selectedApptToCobrar.dateTime).toLocaleString()}</span></p>
+              
+              <div className="border-t border-zinc-900 pt-1.5 mt-1.5 flex justify-between items-center text-xs font-bold">
+                <span className="text-zinc-400 font-semibold">Total a Cobrar:</span>
+                <span className="font-mono text-white text-sm">
+                  Bs. {(Number(selectedApptToCobrar.service.price) - Number(selectedApptToCobrar.discountApplied)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-[10px] uppercase tracking-widest text-zinc-400 font-medium">Método de Pago *</label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setApptPaymentMethod('EFECTIVO')}
+                  className={`py-3 text-[10px] font-bold tracking-widest uppercase border transition-colors cursor-pointer ${
+                    apptPaymentMethod === 'EFECTIVO'
+                      ? 'border-white bg-white text-black'
+                      : 'border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  💵 Efectivo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setApptPaymentMethod('QR')}
+                  className={`py-3 text-[10px] font-bold tracking-widest uppercase border transition-colors cursor-pointer ${
+                    apptPaymentMethod === 'QR'
+                      ? 'border-white bg-white text-black'
+                      : 'border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  📱 Pago QR
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-900 pt-4 flex justify-end gap-3">
+              <Button
+                onClick={() => {
+                  setIsCobrarModalOpen(false);
+                  setSelectedApptToCobrar(null);
+                }}
+                variant="outline"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCobrarCitaConfirm}
+                variant="primary"
+                disabled={submittingCobro}
+              >
+                {submittingCobro ? 'Procesando...' : 'Confirmar Cobro'}
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

@@ -4,7 +4,7 @@ import { roleGuard } from '../middlewares/roleGuard';
 import { createService, updateService, deleteService } from '../controllers/servicesController';
 import { createStylist, updateStylist, deleteStylist } from '../controllers/stylistsController';
 import { createProduct, updateProduct, deleteProduct } from '../controllers/productsController';
-import { getBookings, createBooking, updateBookingStatus, cancelBooking, updateBooking, deleteBooking } from '../controllers/appointmentsController';
+import { getBookings, createBooking, updateBookingStatus, cancelBooking, updateBooking, deleteBooking, checkoutBooking } from '../controllers/appointmentsController';
 import { getSales, createSale, deleteSale, updateSale, checkoutOrder, getDashboardMetrics } from '../controllers/salesController';
 import { getCustomersList, adjustLoyaltyManual } from '../controllers/loyaltyController';
 import { uploadMiddleware, uploadImage } from '../controllers/uploadController';
@@ -27,6 +27,7 @@ router.patch('/appointments/:id/status', updateBookingStatus);
 router.post('/appointments/:id/cancel', cancelBooking);
 router.put('/appointments/:id', updateBooking);
 router.delete('/appointments/:id', deleteBooking);
+router.post('/appointments/:id/checkout', checkoutBooking);
 
 // Clientes y Fidelización (STAFF/ADMIN)
 router.get('/customers', getCustomersList);

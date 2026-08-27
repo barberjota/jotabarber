@@ -3,7 +3,7 @@ import prisma from '../config/db';
 import { AuthRequest } from '../middlewares/authGuard';
 import { AvailabilityService } from '../services/availabilityService';
 import { LoyaltyService } from '../services/loyaltyService';
-import { EstadoCita, Rol } from '@prisma/client';
+import { EstadoCita, Rol, TipoRecompensa } from '@prisma/client';
 
 const mapStatusToEnglish = (status: string) => {
   if (status === 'PENDIENTE') return 'PENDING';
@@ -305,5 +305,146 @@ export const deleteBooking = async (req: AuthRequest, res: Response) => {
     return res.json({ message: 'Cita eliminada con éxito' });
   } catch (error: any) {
     return res.status(500).json({ message: 'Error al eliminar la cita', error: error.message });
+  }
+};
+
+export const checkoutBooking = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { paymentMethod } = req.body;
+
+  if (!paymentMethod || (paymentMethod !== 'EFECTIVO' && paymentMethod !== 'QR')) {
+    return res.status(400).json({ message: 'Método de pago inválido (debe ser EFECTIVO o QR)' });
+  }
+
+  // Validar caja abierta
+  const activeCaja = await prisma.caja.findFirst({
+    where: { estado: 'ABIERTA' },
+  });
+
+  if (!activeCaja) {
+    return res.status(400).json({ message: 'No hay ninguna caja abierta. Debe abrir la caja para poder cobrar.' });
+  }
+
+  try {
+    const appointment = await prisma.cita.findUnique({
+      where: { id },
+      include: { usuario: true, servicio: true },
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Cita no encontrada.' });
+    }
+
+    if (appointment.estado === EstadoCita.COMPLETADO) {
+      return res.status(400).json({ message: 'La cita ya fue completada y cobrada previamente.' });
+    }
+
+    const { usuarioId, servicio, esPromoQuintoCorte, descuentoAplicado } = appointment;
+    const finalAmount = Number(servicio.precio) - Number(descuentoAplicado);
+    const amountToCharge = Math.max(0, finalAmount);
+    const pointsAwarded = Math.floor(amountToCharge);
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Actualizar estado de la cita a COMPLETADO
+      await tx.cita.update({
+        where: { id },
+        data: { estado: EstadoCita.COMPLETADO },
+      });
+
+      // 2. Procesar puntos de lealtad y cortes completados
+      let newCompletedCuts = appointment.usuario.cortesCompletados;
+      if (servicio.aplicaFidelidad) {
+        if (esPromoQuintoCorte) {
+          newCompletedCuts = 0;
+          await tx.historialFidelidad.create({
+            data: {
+              usuarioId,
+              puntos: 0,
+              motivo: `Descuento de 5to corte aplicado en cita de ${servicio.nombre}`,
+              tipoRecompensa: TipoRecompensa.DESCUENTO_QUINTO_CORTE,
+            },
+          });
+        } else {
+          newCompletedCuts += 1;
+        }
+      }
+
+      let newPointsBalance = appointment.usuario.saldoPuntos;
+      if (pointsAwarded > 0) {
+        newPointsBalance += pointsAwarded;
+        await tx.historialFidelidad.create({
+          data: {
+            usuarioId,
+            puntos: pointsAwarded,
+            motivo: `Puntos ganados por cita: ${servicio.nombre}`,
+            tipoRecompensa: null,
+          },
+        });
+      }
+
+      await tx.usuario.update({
+        where: { id: usuarioId },
+        data: {
+          saldoPuntos: newPointsBalance,
+          cortesCompletados: newCompletedCuts,
+        },
+      });
+
+      // 3. Crear la venta asociada, vinculando metodoPago y cajaId
+      const existingSale = await tx.venta.findUnique({
+        where: { citaId: id },
+      });
+
+      if (!existingSale) {
+        await tx.venta.create({
+          data: {
+            usuarioId,
+            citaId: id,
+            subtotal: servicio.precio,
+            descuento: descuentoAplicado,
+            total: amountToCharge,
+            puntosGanados: pointsAwarded,
+            puntosUsados: 0,
+            estado: 'COMPLETADO',
+            metodoPago: paymentMethod,
+            cajaId: activeCaja.id,
+          },
+        });
+      } else {
+        await tx.venta.update({
+          where: { id: existingSale.id },
+          data: {
+            estado: 'COMPLETADO',
+            metodoPago: paymentMethod,
+            cajaId: activeCaja.id,
+          },
+        });
+      }
+
+      // 4. Registrar monto en la caja activa
+      if (paymentMethod === 'EFECTIVO') {
+        await tx.caja.update({
+          where: { id: activeCaja.id },
+          data: {
+            montoEfectivo: {
+              increment: amountToCharge,
+            },
+          },
+        });
+      } else {
+        await tx.caja.update({
+          where: { id: activeCaja.id },
+          data: {
+            montoQR: {
+              increment: amountToCharge,
+            },
+          },
+        });
+      }
+    });
+
+    return res.json({ message: 'Cita cobrada y completada con éxito.' });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Error al cobrar la cita', error: error.message });
   }
 };
