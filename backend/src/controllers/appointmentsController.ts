@@ -173,6 +173,8 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
         servicioId: serviceId,
         fechaHora: startDateTime,
         fechaHoraFin: endDateTime,
+        fecha: date,
+        hora: time,
         estado: EstadoCita.CONFIRMADO,
         esPromoQuintoCorte,
         descuentoAplicado,
@@ -286,6 +288,8 @@ export const updateBooking = async (req: AuthRequest, res: Response) => {
         servicioId: serviceId,
         fechaHora: startDateTime,
         fechaHoraFin: endDateTime,
+        fecha: date,
+        hora: time,
         notas: notes,
       },
     });
@@ -390,10 +394,19 @@ export const checkoutBooking = async (req: AuthRequest, res: Response) => {
         },
       });
 
-      // 3. Crear la venta asociada, vinculando metodoPago y cajaId
+      // 3. Crear la venta asociada, vinculando metodoPago y cajaId con fecha y hora de Bolivia
       const existingSale = await tx.venta.findUnique({
         where: { citaId: id },
       });
+
+      const nowBolivia = new Date(new Date().toLocaleString("en-US", { timeZone: "America/La_Paz" }));
+      const year = nowBolivia.getFullYear();
+      const month = String(nowBolivia.getMonth() + 1).padStart(2, '0');
+      const day = String(nowBolivia.getDate()).padStart(2, '0');
+      const hours = String(nowBolivia.getHours()).padStart(2, '0');
+      const minutes = String(nowBolivia.getMinutes()).padStart(2, '0');
+      const ventaFecha = `${year}-${month}-${day}`;
+      const ventaHora = `${hours}:${minutes}`;
 
       if (!existingSale) {
         await tx.venta.create({
@@ -408,6 +421,8 @@ export const checkoutBooking = async (req: AuthRequest, res: Response) => {
             estado: 'COMPLETADO',
             metodoPago: paymentMethod,
             cajaId: activeCaja.id,
+            fecha: ventaFecha,
+            hora: ventaHora,
           },
         });
       } else {
@@ -417,6 +432,8 @@ export const checkoutBooking = async (req: AuthRequest, res: Response) => {
             estado: 'COMPLETADO',
             metodoPago: paymentMethod,
             cajaId: activeCaja.id,
+            fecha: ventaFecha,
+            hora: ventaHora,
           },
         });
       }

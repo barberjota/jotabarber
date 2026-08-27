@@ -91,6 +91,8 @@ model Cita {
   servicioId         String
   fechaHora          DateTime
   fechaHoraFin       DateTime
+  fecha              String     @default("")
+  hora               String     @default("")
   estado             EstadoCita @default(CONFIRMADO)
   descuentoAplicado  Decimal    @default(0.00) @db.Decimal(10, 2)
   esPromoQuintoCorte Boolean    @default(false) // Indica si se aplicó el beneficio de cliente fiel
@@ -129,6 +131,8 @@ model Venta {
   usuario       Usuario?    @relation(fields: [usuarioId], references: [id])
   cita          Cita?       @relation(fields: [citaId], references: [id])
   items         ItemVenta[]
+  fecha         String      @default("")
+  hora          String      @default("")
   createdAt     DateTime    @default(now())
 }
 

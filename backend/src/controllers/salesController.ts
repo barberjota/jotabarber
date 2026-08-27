@@ -119,6 +119,15 @@ export const createSale = async (req: AuthRequest, res: Response) => {
 
       const pointsAwarded = userId ? Math.floor(total) : 0;
 
+      const nowBolivia = new Date(new Date().toLocaleString("en-US", { timeZone: "America/La_Paz" }));
+      const year = nowBolivia.getFullYear();
+      const month = String(nowBolivia.getMonth() + 1).padStart(2, '0');
+      const day = String(nowBolivia.getDate()).padStart(2, '0');
+      const hours = String(nowBolivia.getHours()).padStart(2, '0');
+      const minutes = String(nowBolivia.getMinutes()).padStart(2, '0');
+      const ventaFecha = `${year}-${month}-${day}`;
+      const ventaHora = `${hours}:${minutes}`;
+
       const sale = await tx.venta.create({
         data: {
           usuarioId: userId || null,
@@ -130,6 +139,8 @@ export const createSale = async (req: AuthRequest, res: Response) => {
           estado: 'COMPLETADO',
           metodoPago: method,
           cajaId: activeCaja.id,
+          fecha: ventaFecha,
+          hora: ventaHora,
           items: {
             create: saleItemsToCreate,
           },
@@ -374,6 +385,15 @@ export const createPublicOrder = async (req: AuthRequest, res: Response) => {
       const total = subtotal;
       const pointsAwarded = Math.floor(total);
 
+      const nowBolivia = new Date(new Date().toLocaleString("en-US", { timeZone: "America/La_Paz" }));
+      const year = nowBolivia.getFullYear();
+      const month = String(nowBolivia.getMonth() + 1).padStart(2, '0');
+      const day = String(nowBolivia.getDate()).padStart(2, '0');
+      const hours = String(nowBolivia.getHours()).padStart(2, '0');
+      const minutes = String(nowBolivia.getMinutes()).padStart(2, '0');
+      const ventaFecha = `${year}-${month}-${day}`;
+      const ventaHora = `${hours}:${minutes}`;
+
       const sale = await tx.venta.create({
         data: {
           usuarioId: userId,
@@ -383,6 +403,8 @@ export const createPublicOrder = async (req: AuthRequest, res: Response) => {
           puntosGanados: 0, // Se sumarán al cobrar
           puntosUsados: 0,
           estado: 'PENDIENTE',
+          fecha: ventaFecha,
+          hora: ventaHora,
           items: {
             create: saleItemsToCreate,
           },
@@ -593,7 +615,16 @@ export const checkoutOrder = async (req: AuthRequest, res: Response) => {
     const pointsAwarded = Math.floor(totalVal);
 
     await prisma.$transaction(async (tx) => {
-      // 1. Cambiar estado, metodoPago, cajaId y puntos ganados
+      const nowBolivia = new Date(new Date().toLocaleString("en-US", { timeZone: "America/La_Paz" }));
+      const year = nowBolivia.getFullYear();
+      const month = String(nowBolivia.getMonth() + 1).padStart(2, '0');
+      const day = String(nowBolivia.getDate()).padStart(2, '0');
+      const hours = String(nowBolivia.getHours()).padStart(2, '0');
+      const minutes = String(nowBolivia.getMinutes()).padStart(2, '0');
+      const checkoutFecha = `${year}-${month}-${day}`;
+      const checkoutHora = `${hours}:${minutes}`;
+
+      // 1. Cambiar estado, metodoPago, cajaId y puntos ganados con fecha y hora
       await tx.venta.update({
         where: { id },
         data: {
@@ -601,6 +632,8 @@ export const checkoutOrder = async (req: AuthRequest, res: Response) => {
           metodoPago: paymentMethod,
           cajaId: activeCaja.id,
           puntosGanados: pointsAwarded,
+          fecha: checkoutFecha,
+          hora: checkoutHora,
         },
       });
 
