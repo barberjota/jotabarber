@@ -21,6 +21,7 @@ interface Product {
   price: string;
   imageUrl: string | null;
   stock: number;
+  category: string;
 }
 
 export const HomePage: React.FC = () => {
@@ -28,6 +29,7 @@ export const HomePage: React.FC = () => {
   const { addToCart } = useCart();
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('TODOS');
   const [loading, setLoading] = useState(true);
 
   // Carrusel de imágenes
@@ -49,7 +51,7 @@ export const HomePage: React.FC = () => {
           api.get('/client/products'),
         ]);
         setServices(servicesRes.data.slice(0, 3)); // Primeros 3 servicios
-        setProducts(productsRes.data.slice(0, 3)); // Primeros 3 productos
+        setProducts(productsRes.data); // Mostrar TODOS los productos
       } catch (err) {
         console.error('Error al obtener datos públicos:', err);
       } finally {
@@ -58,6 +60,11 @@ export const HomePage: React.FC = () => {
     };
     fetchData();
   }, []);
+
+  const filteredProducts = products.filter((p) => {
+    if (selectedCategory === 'TODOS') return true;
+    return p.category === selectedCategory;
+  });
 
   return (
     <div className="space-y-20 pb-20">
@@ -202,18 +209,42 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Catálogo de Productos */}
-      <section className="max-w-5xl mx-auto px-4 space-y-10">
-        <div className="text-center space-y-2">
-          <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-semibold">Cuidado Personal</span>
+      <section className="max-w-5xl mx-auto px-4 space-y-8">
+        <div className="text-center">
           <h2 className="text-xl sm:text-2xl font-bold uppercase tracking-widest text-white">Nuestros Productos</h2>
-          <p className="text-xs text-zinc-400 max-w-lg mx-auto">Línea de productos premium para el mantenimiento de tu estilo en casa.</p>
+        </div>
+
+        {/* Categorías de Productos */}
+        <div className="flex justify-center gap-2 flex-wrap">
+          {[
+            { id: 'TODOS', label: 'Todos' },
+            { id: 'CABELLO', label: 'Cabello' },
+            { id: 'ROPA', label: 'Ropa' },
+            { id: 'OTROS', label: 'Otros' }
+          ].map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setSelectedCategory(c.id)}
+              className={`px-3 py-1.5 text-[9px] uppercase font-bold tracking-widest border transition-colors cursor-pointer ${
+                selectedCategory === c.id
+                  ? 'bg-white border-white text-black font-semibold'
+                  : 'border-zinc-800 text-zinc-400 hover:text-white'
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
 
         {loading ? (
           <div className="text-center py-8 text-xs uppercase tracking-widest text-zinc-500">Cargando catálogo de productos...</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12 text-xs uppercase tracking-widest text-zinc-500 border border-zinc-900 bg-zinc-950/40">
+            No hay productos en esta categoría.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <Card key={product.id} className="flex flex-col justify-between p-5 space-y-6">
                 <div>
                   <div className="relative aspect-square w-full bg-zinc-900 border border-zinc-800 overflow-hidden mb-4">

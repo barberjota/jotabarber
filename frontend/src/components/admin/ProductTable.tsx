@@ -14,6 +14,7 @@ interface Product {
   stock: number;
   imageUrl: string | null;
   isActive: boolean;
+  category: string;
 }
 
 export const ProductTable: React.FC = () => {
@@ -32,9 +33,18 @@ export const ProductTable: React.FC = () => {
   const [pointsCost, setPointsCost] = useState('');
   const [stock, setStock] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [category, setCategory] = useState('CABELLO');
   const [isActive, setIsActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Filtros y Búsqueda
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('TODOS');
+
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -82,6 +92,7 @@ export const ProductTable: React.FC = () => {
     setPointsCost('');
     setStock('0');
     setImageUrl('');
+    setCategory('CABELLO');
     setIsActive(true);
     setIsProductModalOpen(true);
   };
@@ -94,6 +105,7 @@ export const ProductTable: React.FC = () => {
     setPointsCost(p.pointsCost ? p.pointsCost.toString() : '');
     setStock(p.stock.toString());
     setImageUrl(p.imageUrl || '');
+    setCategory(p.category || 'CABELLO');
     setIsActive(p.isActive);
     setIsProductModalOpen(true);
   };
@@ -108,6 +120,7 @@ export const ProductTable: React.FC = () => {
       pointsCost: pointsCost ? Number(pointsCost) : null,
       stock: Number(stock),
       imageUrl: imageUrl || null,
+      category,
       isActive,
     };
 
@@ -138,6 +151,24 @@ export const ProductTable: React.FC = () => {
     }
   };
 
+  // Resetear a la página 1 cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategoryFilter]);
+
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCategory = selectedCategoryFilter === 'TODOS' ? true : p.category === selectedCategoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    (currentPage - 1) * itemsPerPage + itemsPerPage
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -152,11 +183,47 @@ export const ProductTable: React.FC = () => {
         </div>
       </div>
 
+      {/* Barra de Búsqueda y Filtros de Categorías */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-zinc-950 border border-zinc-900 p-4">
+        {/* Búsqueda por texto */}
+        <div className="flex-1 max-w-sm">
+          <input
+            type="text"
+            placeholder="Buscar por nombre o descripción..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-zinc-900 border border-zinc-800 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none placeholder-zinc-600"
+          />
+        </div>
+
+        {/* Categorías */}
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { id: 'TODOS', label: 'Todos' },
+            { id: 'CABELLO', label: 'Cabello' },
+            { id: 'ROPA', label: 'Ropa' },
+            { id: 'OTROS', label: 'Otros' }
+          ].map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setSelectedCategoryFilter(c.id)}
+              className={`px-3 py-1.5 text-[9px] uppercase font-bold tracking-widest border transition-colors cursor-pointer ${
+                selectedCategoryFilter === c.id
+                  ? 'bg-white border-white text-black font-semibold'
+                  : 'border-zinc-800 text-zinc-400 hover:text-white'
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {loading ? (
         <div className="text-center py-12 text-sm uppercase tracking-widest text-zinc-500">Cargando productos...</div>
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <div className="text-center py-12 bg-zinc-950 border border-zinc-800">
-          <p className="text-xs text-zinc-500 uppercase tracking-wider">No hay productos en inventario</p>
+          <p className="text-xs text-zinc-500 uppercase tracking-wider">No se encontraron productos con los filtros seleccionados</p>
         </div>
       ) : (
         <div className="overflow-x-auto border border-zinc-800 bg-zinc-950">
@@ -172,7 +239,7 @@ export const ProductTable: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-900 text-xs">
-              {products.map((p) => {
+              {paginatedProducts.map((p) => {
                 const isLowStock = p.stock <= 5;
                 return (
                   <tr key={p.id} className="hover:bg-zinc-900/30 transition-colors">
@@ -183,7 +250,12 @@ export const ProductTable: React.FC = () => {
                         className="w-10 h-10 object-cover border border-zinc-800 filter grayscale"
                       />
                       <div>
-                        <span className="font-bold text-white uppercase tracking-wider block">{p.name}</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-white uppercase tracking-wider">{p.name}</span>
+                          <span className="text-[8px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-1 py-0.5 uppercase tracking-wider font-bold">
+                            {p.category || 'CABELLO'}
+                          </span>
+                        </div>
                         <span className="text-[10px] text-zinc-500 line-clamp-1">{p.description || 'Sin descripción'}</span>
                       </div>
                     </td>
@@ -230,6 +302,32 @@ export const ProductTable: React.FC = () => {
               })}
             </tbody>
           </table>
+          {/* Paginación */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center bg-zinc-950 border-t border-zinc-900 p-4">
+              <Button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                variant="outline"
+                size="sm"
+                className="text-[10px] uppercase font-bold tracking-wider cursor-pointer"
+              >
+                Anterior
+              </Button>
+              <span className="text-[10px] text-zinc-400 font-mono">
+                Página {currentPage} de {totalPages} ({filteredProducts.length} productos)
+              </span>
+              <Button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                variant="outline"
+                size="sm"
+                className="text-[10px] uppercase font-bold tracking-wider cursor-pointer"
+              >
+                Siguiente
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -272,6 +370,20 @@ export const ProductTable: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-1 font-medium">Categoría del Producto *</label>
+            <select
+              required
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm text-white focus:outline-none focus:border-zinc-500 rounded-none cursor-pointer"
+            >
+              <option value="CABELLO">Productos de Cabello</option>
+              <option value="ROPA">Ropa / Vestimenta</option>
+              <option value="OTROS">Otros / Accesorios</option>
+            </select>
           </div>
 
           <div>

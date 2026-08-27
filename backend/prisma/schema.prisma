@@ -81,6 +81,7 @@ model Producto {
   stock       Int         @default(0)
   imageUrl    String?
   isActive    Boolean     @default(true)
+  categoria   String      @default("CABELLO")
   itemsVenta  ItemVenta[]
 }
 

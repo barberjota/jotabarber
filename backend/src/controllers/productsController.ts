@@ -10,6 +10,7 @@ const mapProducto = (p: any) => ({
   stock: p.stock,
   imageUrl: p.imageUrl,
   isActive: p.isActive,
+  category: p.categoria,
 });
 
 export const getProducts = async (req: Request, res: Response) => {
@@ -42,7 +43,7 @@ export const getProductById = async (req: Request, res: Response) => {
 };
 
 export const createProduct = async (req: Request, res: Response) => {
-  const { name, description, price, pointsCost, stock, imageUrl } = req.body;
+  const { name, description, price, pointsCost, stock, imageUrl, category } = req.body;
 
   if (!name || price === undefined || stock === undefined) {
     return res.status(400).json({ message: 'Nombre, precio y stock son obligatorios' });
@@ -57,6 +58,7 @@ export const createProduct = async (req: Request, res: Response) => {
         costoPuntos: pointsCost ? Number(pointsCost) : null,
         stock: Number(stock),
         imageUrl: imageUrl || 'https://images.unsplash.com/photo-1608248597481-496100c8c836?w=200&h=200&fit=crop',
+        categoria: category || 'CABELLO',
       },
     });
     return res.status(201).json(mapProducto(product));
@@ -67,7 +69,7 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const updateProduct = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, description, price, pointsCost, stock, imageUrl, isActive } = req.body;
+  const { name, description, price, pointsCost, stock, imageUrl, isActive, category } = req.body;
 
   try {
     const product = await prisma.producto.findUnique({ where: { id } });
@@ -85,6 +87,7 @@ export const updateProduct = async (req: Request, res: Response) => {
         stock: stock !== undefined ? Number(stock) : product.stock,
         imageUrl: imageUrl !== undefined ? imageUrl : product.imageUrl,
         isActive: isActive !== undefined ? Boolean(isActive) : product.isActive,
+        categoria: category !== undefined ? category : product.categoria,
       },
     });
 
