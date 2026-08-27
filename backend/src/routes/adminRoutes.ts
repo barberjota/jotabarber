@@ -5,9 +5,10 @@ import { createService, updateService, deleteService } from '../controllers/serv
 import { createStylist, updateStylist, deleteStylist } from '../controllers/stylistsController';
 import { createProduct, updateProduct, deleteProduct } from '../controllers/productsController';
 import { getBookings, createBooking, updateBookingStatus, cancelBooking, updateBooking, deleteBooking } from '../controllers/appointmentsController';
-import { getSales, createSale, getDashboardMetrics } from '../controllers/salesController';
+import { getSales, createSale, deleteSale, updateSale, checkoutOrder, getDashboardMetrics } from '../controllers/salesController';
 import { getCustomersList, adjustLoyaltyManual } from '../controllers/loyaltyController';
 import { uploadMiddleware, uploadImage } from '../controllers/uploadController';
+import { getActiveCaja, openCaja, closeCaja } from '../controllers/cajaController';
 import { Rol } from '@prisma/client';
 
 const router = Router();
@@ -33,6 +34,14 @@ router.get('/customers', getCustomersList);
 // Ventas y POS (STAFF/ADMIN)
 router.get('/sales', getSales);
 router.post('/sales', createSale);
+router.put('/sales/:id', updateSale);
+router.delete('/sales/:id', deleteSale);
+router.post('/sales/:id/checkout', checkoutOrder);
+
+// Control de Caja (STAFF/ADMIN)
+router.get('/caja/active', getActiveCaja);
+router.post('/caja/open', openCaja);
+router.post('/caja/close', closeCaja);
 
 // Métricas de Dashboard (STAFF/ADMIN)
 router.get('/metrics', getDashboardMetrics);

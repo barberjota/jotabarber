@@ -48,6 +48,7 @@ export const QuickSaleModal: React.FC<QuickSaleModalProps> = ({
   const [quantity, setQuantity] = useState<number>(1);
   const [discount, setDiscount] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
+  const [posPaymentMethod, setPosPaymentMethod] = useState<'EFECTIVO' | 'QR'>('EFECTIVO');
 
   // Carrito de Venta
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -145,6 +146,7 @@ export const QuickSaleModal: React.FC<QuickSaleModalProps> = ({
         userId: selectedCustomerId || null,
         items,
         discount,
+        paymentMethod: posPaymentMethod,
       });
 
       alert('Venta procesada con éxito');
@@ -311,6 +313,35 @@ export const QuickSaleModal: React.FC<QuickSaleModalProps> = ({
                 onChange={(e) => setDiscount(Number(e.target.value))}
                 className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-zinc-500 rounded-none"
               />
+            </div>
+
+            {/* Método de Pago */}
+            <div className="border-t border-zinc-900 pt-4">
+              <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1.5 font-medium">Método de Pago</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPosPaymentMethod('EFECTIVO')}
+                  className={`py-2 text-[10px] font-bold tracking-widest uppercase border transition-colors cursor-pointer ${
+                    posPaymentMethod === 'EFECTIVO'
+                      ? 'border-white bg-white text-black font-semibold'
+                      : 'border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  💵 Efectivo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPosPaymentMethod('QR')}
+                  className={`py-2 text-[10px] font-bold tracking-widest uppercase border transition-colors cursor-pointer ${
+                    posPaymentMethod === 'QR'
+                      ? 'border-white bg-white text-black font-semibold'
+                      : 'border-zinc-800 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  📱 QR
+                </button>
+              </div>
             </div>
           </div>
 

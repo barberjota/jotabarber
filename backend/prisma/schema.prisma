@@ -36,6 +36,7 @@ model Usuario {
   cortesCompletados Int                  @default(0)       // Contador de cortes para el ciclo de 5 cortes
   citas             Cita[]
   ventas            Venta[]
+  cajas             Caja[]
   historialLealtad  HistorialFidelidad[]
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
@@ -121,6 +122,10 @@ model Venta {
   total         Decimal     @db.Decimal(10, 2)
   puntosGanados Int         @default(0)
   puntosUsados  Int         @default(0)
+  estado        String      @default("COMPLETADO") // "PENDIENTE", "COMPLETADO", "CANCELADO"
+  metodoPago    String?     // "EFECTIVO", "QR"
+  cajaId        String?
+  caja          Caja?       @relation(fields: [cajaId], references: [id])
   usuario       Usuario?    @relation(fields: [usuarioId], references: [id])
   cita          Cita?       @relation(fields: [citaId], references: [id])
   items         ItemVenta[]
@@ -135,4 +140,18 @@ model ItemVenta {
   precioUnit Decimal  @db.Decimal(10, 2)
   venta      Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
   producto   Producto @relation(fields: [productoId], references: [id])
+}
+
+model Caja {
+  id             String     @id @default(uuid())
+  usuarioId      String
+  usuario        Usuario    @relation(fields: [usuarioId], references: [id])
+  estado         String     @default("ABIERTA") // "ABIERTA", "CERRADA"
+  montoApertura  Decimal    @db.Decimal(10, 2)
+  montoCierre    Decimal?   @db.Decimal(10, 2)
+  montoEfectivo  Decimal    @default(0.00) @db.Decimal(10, 2)
+  montoQR        Decimal    @default(0.00) @db.Decimal(10, 2)
+  ventas         Venta[]
+  createdAt      DateTime   @default(now())
+  closedAt       DateTime?
 }

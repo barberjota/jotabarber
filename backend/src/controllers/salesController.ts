@@ -8,7 +8,7 @@ export const getSales = async (req: AuthRequest, res: Response) => {
   try {
     const sales = await prisma.venta.findMany({
       include: {
-        usuario: { select: { id: true, nombre: true } },
+        usuario: { select: { id: true, nombre: true, telefono: true } },
         items: {
           include: {
             producto: true,
@@ -28,11 +28,15 @@ export const getSales = async (req: AuthRequest, res: Response) => {
         total: s.total,
         pointsAwarded: s.puntosGanados,
         pointsUsed: s.puntosUsados,
+        estado: s.estado,
+        metodoPago: s.metodoPago,
+        cajaId: s.cajaId,
         createdAt: s.createdAt,
         user: s.usuario
           ? {
               id: s.usuario.id,
               name: s.usuario.nombre,
+              phone: s.usuario.telefono,
               email: '',
             }
           : null,
@@ -57,10 +61,24 @@ export const getSales = async (req: AuthRequest, res: Response) => {
 };
 
 export const createSale = async (req: AuthRequest, res: Response) => {
-  const { userId, items, discount } = req.body;
+  const { userId, items, discount, paymentMethod } = req.body;
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ message: 'Debe incluir al menos un producto' });
+  }
+
+  const method = paymentMethod || 'EFECTIVO';
+  if (method !== 'EFECTIVO' && method !== 'QR') {
+    return res.status(400).json({ message: 'Método de pago inválido (debe ser EFECTIVO o QR)' });
+  }
+
+  // Validar caja abierta
+  const activeCaja = await prisma.caja.findFirst({
+    where: { estado: 'ABIERTA' },
+  });
+
+  if (!activeCaja) {
+    return res.status(400).json({ message: 'No hay ninguna caja abierta. Debe abrir la caja para poder cobrar.' });
   }
 
   try {
@@ -109,6 +127,9 @@ export const createSale = async (req: AuthRequest, res: Response) => {
           total,
           puntosGanados: pointsAwarded,
           puntosUsados: 0,
+          estado: 'COMPLETADO',
+          metodoPago: method,
+          cajaId: activeCaja.id,
           items: {
             create: saleItemsToCreate,
           },
@@ -137,6 +158,27 @@ export const createSale = async (req: AuthRequest, res: Response) => {
         });
       }
 
+      // Sumar al saldo de la caja activa
+      if (method === 'EFECTIVO') {
+        await tx.caja.update({
+          where: { id: activeCaja.id },
+          data: {
+            montoEfectivo: {
+              increment: total,
+            },
+          },
+        });
+      } else {
+        await tx.caja.update({
+          where: { id: activeCaja.id },
+          data: {
+            montoQR: {
+              increment: total,
+            },
+          },
+        });
+      }
+
       return sale;
     });
 
@@ -149,7 +191,7 @@ export const createSale = async (req: AuthRequest, res: Response) => {
       pointsAwarded: saleResult.puntosGanados,
     });
   } catch (error: any) {
-    return res.status(500).json({ message: 'Error al procesar la venta', error: error.message });
+    return res.status(500).json({ message: error.message || 'Error al procesar la venta', error: error.message });
   }
 };
 
@@ -338,8 +380,9 @@ export const createPublicOrder = async (req: AuthRequest, res: Response) => {
           subtotal,
           descuento: 0,
           total,
-          puntosGanados: pointsAwarded,
+          puntosGanados: 0, // Se sumarán al cobrar
           puntosUsados: 0,
+          estado: 'PENDIENTE',
           items: {
             create: saleItemsToCreate,
           },
@@ -348,26 +391,6 @@ export const createPublicOrder = async (req: AuthRequest, res: Response) => {
           items: true,
         },
       });
-
-      // Sumar puntos de fidelidad acumulados
-      if (pointsAwarded > 0) {
-        await tx.usuario.update({
-          where: { id: userId },
-          data: {
-            saldoPuntos: {
-              increment: pointsAwarded,
-            },
-          },
-        });
-
-        await tx.historialFidelidad.create({
-          data: {
-            usuarioId: userId,
-            puntos: pointsAwarded,
-            motivo: `Puntos ganados por reserva de productos (Venta ID: ${sale.id})`,
-          },
-        });
-      }
 
       return sale;
     });
@@ -379,5 +402,252 @@ export const createPublicOrder = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     return res.status(500).json({ message: error.message || 'Error al procesar el pedido', error: error.message });
+  }
+};
+
+export const deleteSale = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  try {
+    const sale = await prisma.venta.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
+    if (!sale) {
+      return res.status(404).json({ message: 'Venta o pedido no encontrado' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Devolver stock de los productos siempre que se elimina (especialmente si era PENDIENTE)
+      for (const item of sale.items) {
+        await tx.producto.update({
+          where: { id: item.productoId },
+          data: { stock: { increment: item.cantidad } },
+        });
+      }
+
+      // Si estaba completada y tenía puntos acumulados, restárselos al cliente
+      if (sale.estado === 'COMPLETADO' && sale.usuarioId && sale.puntosGanados > 0) {
+        await tx.usuario.update({
+          where: { id: sale.usuarioId },
+          data: {
+            saldoPuntos: {
+              decrement: sale.puntosGanados,
+            },
+          },
+        });
+
+        await tx.historialFidelidad.create({
+          data: {
+            usuarioId: sale.usuarioId,
+            puntos: -sale.puntosGanados,
+            motivo: `Puntos revertidos por eliminación de venta (Venta ID: ${sale.id})`,
+          },
+        });
+
+        // Restar de la caja si estaba asociada
+        if (sale.cajaId && sale.metodoPago) {
+          const field = sale.metodoPago === 'EFECTIVO' ? 'montoEfectivo' : 'montoQR';
+          await tx.caja.update({
+            where: { id: sale.cajaId },
+            data: {
+              [field]: {
+                decrement: sale.total,
+              },
+            },
+          });
+        }
+      }
+
+      await tx.venta.delete({
+        where: { id },
+      });
+    });
+
+    return res.json({ message: 'Pedido/Venta eliminado con éxito y stock restaurado.' });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Error al eliminar el registro', error: error.message });
+  }
+};
+
+export const updateSale = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { items } = req.body;
+
+  if (!items || !Array.isArray(items)) {
+    return res.status(400).json({ message: 'Debe proveer una lista de items.' });
+  }
+
+  try {
+    const sale = await prisma.venta.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
+    if (!sale) {
+      return res.status(404).json({ message: 'Pedido no encontrado.' });
+    }
+
+    if (sale.estado !== 'PENDIENTE') {
+      return res.status(400).json({ message: 'Solo se pueden modificar pedidos pendientes.' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Devolver stock anterior
+      for (const oldItem of sale.items) {
+        await tx.producto.update({
+          where: { id: oldItem.productoId },
+          data: { stock: { increment: oldItem.cantidad } },
+        });
+      }
+
+      // 2. Limpiar items antiguos
+      await tx.itemVenta.deleteMany({
+        where: { ventaId: id },
+      });
+
+      // 3. Crear nuevos items y descontar stock
+      let subtotal = 0;
+      const newItemsData = [];
+
+      for (const item of items) {
+        const product = await tx.producto.findUnique({
+          where: { id: item.productId },
+        });
+
+        if (!product || !product.isActive) {
+          throw new Error(`Producto ${item.productId} no encontrado o inactivo`);
+        }
+
+        if (product.stock < item.quantity) {
+          throw new Error(`Stock insuficiente para ${product.nombre} (Disponibles: ${product.stock})`);
+        }
+
+        const price = Number(product.precio);
+        subtotal += price * item.quantity;
+
+        // Descontar
+        await tx.producto.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } },
+        });
+
+        newItemsData.push({
+          productoId: item.productId,
+          cantidad: item.quantity,
+          precioUnit: price,
+        });
+      }
+
+      // 4. Actualizar venta
+      await tx.venta.update({
+        where: { id },
+        data: {
+          subtotal,
+          total: subtotal,
+          items: {
+            create: newItemsData,
+          },
+        },
+      });
+    });
+
+    return res.json({ message: 'Pedido actualizado con éxito.' });
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || 'Error al actualizar el pedido', error: error.message });
+  }
+};
+
+export const checkoutOrder = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { paymentMethod } = req.body;
+
+  if (!paymentMethod || (paymentMethod !== 'EFECTIVO' && paymentMethod !== 'QR')) {
+    return res.status(400).json({ message: 'Método de pago inválido (debe ser EFECTIVO o QR)' });
+  }
+
+  // Validar caja abierta
+  const activeCaja = await prisma.caja.findFirst({
+    where: { estado: 'ABIERTA' },
+  });
+
+  if (!activeCaja) {
+    return res.status(400).json({ message: 'No hay ninguna caja abierta. Debe abrir la caja para poder cobrar.' });
+  }
+
+  try {
+    const sale = await prisma.venta.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
+    if (!sale) {
+      return res.status(404).json({ message: 'Pedido no encontrado' });
+    }
+
+    if (sale.estado !== 'PENDIENTE') {
+      return res.status(400).json({ message: 'El pedido ya fue cobrado o cancelado.' });
+    }
+
+    const totalVal = Number(sale.total);
+    const pointsAwarded = Math.floor(totalVal);
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Cambiar estado, metodoPago, cajaId y puntos ganados
+      await tx.venta.update({
+        where: { id },
+        data: {
+          estado: 'COMPLETADO',
+          metodoPago: paymentMethod,
+          cajaId: activeCaja.id,
+          puntosGanados: pointsAwarded,
+        },
+      });
+
+      // 2. Sumar puntos al cliente si tiene usuarioId
+      if (sale.usuarioId && pointsAwarded > 0) {
+        await tx.usuario.update({
+          where: { id: sale.usuarioId },
+          data: {
+            saldoPuntos: {
+              increment: pointsAwarded,
+            },
+          },
+        });
+
+        await tx.historialFidelidad.create({
+          data: {
+            usuarioId: sale.usuarioId,
+            puntos: pointsAwarded,
+            motivo: `Puntos ganados por compra de productos (Venta ID: ${sale.id})`,
+          },
+        });
+      }
+
+      // 3. Registrar monto en la caja activa
+      if (paymentMethod === 'EFECTIVO') {
+        await tx.caja.update({
+          where: { id: activeCaja.id },
+          data: {
+            montoEfectivo: {
+              increment: totalVal,
+            },
+          },
+        });
+      } else {
+        await tx.caja.update({
+          where: { id: activeCaja.id },
+          data: {
+            montoQR: {
+              increment: totalVal,
+            },
+          },
+        });
+      }
+    });
+
+    return res.json({ message: 'Pedido cobrado con éxito.' });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Error al cobrar el pedido', error: error.message });
   }
 };
