@@ -607,12 +607,12 @@ export const ProductsPage: React.FC = () => {
                             )}
                           </td>
                           <td className="p-3 text-zinc-300">{c.usuarioNombre}</td>
-                          <td className="p-3 text-right font-mono text-zinc-400">Bs. {c.montoApertura.toFixed(2)}</td>
+                          <td className="p-3 text-right font-mono text-zinc-400">Bs. {(c.montoApertura || 0).toFixed(2)}</td>
                           <td className="p-3 text-right font-mono">
                             {c.estado === 'CERRADA' ? (
                               <>
-                                <span className="text-white block font-bold">Bs. {c.montoCierreEfectivo.toFixed(2)}</span>
-                                <span className="text-[9px] text-zinc-500 block">Esperado: Bs. {c.montoEfectivo.toFixed(2)}</span>
+                                <span className="text-white block font-bold">Bs. {(c.montoCierreEfectivo || 0).toFixed(2)}</span>
+                                <span className="text-[9px] text-zinc-500 block">Esperado: Bs. {(c.montoEfectivo || 0).toFixed(2)}</span>
                               </>
                             ) : (
                               <span className="text-yellow-500 tracking-wider font-bold">ABIERTA</span>
@@ -621,8 +621,8 @@ export const ProductsPage: React.FC = () => {
                           <td className="p-3 text-right font-mono">
                             {c.estado === 'CERRADA' ? (
                               <>
-                                <span className="text-white block font-bold">Bs. {c.montoCierreQR.toFixed(2)}</span>
-                                <span className="text-[9px] text-zinc-500 block">Esperado: Bs. {c.montoQR.toFixed(2)}</span>
+                                <span className="text-white block font-bold">Bs. {(c.montoCierreQR || 0).toFixed(2)}</span>
+                                <span className="text-[9px] text-zinc-500 block">Esperado: Bs. {(c.montoQR || 0).toFixed(2)}</span>
                               </>
                             ) : (
                               <span className="text-yellow-500 tracking-wider font-bold">ABIERTA</span>
@@ -870,7 +870,7 @@ export const ProductsPage: React.FC = () => {
             <div className="space-y-3">
               <div className="flex justify-between items-center py-1 border-b border-zinc-900">
                 <span className="text-zinc-400">Fondo Inicial de Apertura:</span>
-                <span className="font-mono font-bold text-white">Bs. {selectedCaja.montoApertura.toFixed(2)}</span>
+                <span className="font-mono font-bold text-white">Bs. {(selectedCaja.montoApertura || 0).toFixed(2)}</span>
               </div>
 
               {selectedCaja.estado === 'CERRADA' ? (
@@ -881,28 +881,28 @@ export const ProductsPage: React.FC = () => {
                     <span className="text-zinc-500 font-bold uppercase text-[9px] text-right">Sistema (Esperado)</span>
 
                     <span>💵 Efectivo</span>
-                    <span className="font-mono text-right text-white">Bs. {selectedCaja.montoCierreEfectivo.toFixed(2)}</span>
-                    <span className="font-mono text-right text-zinc-400">Bs. {selectedCaja.montoEfectivo.toFixed(2)}</span>
+                    <span className="font-mono text-right text-white">Bs. {(selectedCaja.montoCierreEfectivo || 0).toFixed(2)}</span>
+                    <span className="font-mono text-right text-zinc-400">Bs. {(selectedCaja.montoEfectivo || 0).toFixed(2)}</span>
 
                     <span>📱 QR</span>
-                    <span className="font-mono text-right text-white">Bs. {selectedCaja.montoCierreQR.toFixed(2)}</span>
-                    <span className="font-mono text-right text-zinc-400">Bs. {selectedCaja.montoQR.toFixed(2)}</span>
+                    <span className="font-mono text-right text-white">Bs. {(selectedCaja.montoCierreQR || 0).toFixed(2)}</span>
+                    <span className="font-mono text-right text-zinc-400">Bs. {(selectedCaja.montoQR || 0).toFixed(2)}</span>
                   </div>
 
                   <div className="flex justify-between items-center font-bold text-sm border-t border-zinc-900 pt-2">
                     <span className="text-zinc-400 uppercase text-xs">Total Cierre:</span>
-                    <span className="font-mono text-white">Bs. {selectedCaja.montoCierre.toFixed(2)}</span>
+                    <span className="font-mono text-white">Bs. {(selectedCaja.montoCierre || 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-zinc-500 uppercase text-[10px]">Desviación General:</span>
                     <span className={`font-bold font-mono ${
-                      (selectedCaja.montoCierre - (selectedCaja.montoEfectivo + selectedCaja.montoQR)) === 0
+                      ((selectedCaja.montoCierre || 0) - ((selectedCaja.montoEfectivo || 0) + (selectedCaja.montoQR || 0))) === 0
                         ? 'text-emerald-400'
-                        : (selectedCaja.montoCierre - (selectedCaja.montoEfectivo + selectedCaja.montoQR)) > 0
+                        : ((selectedCaja.montoCierre || 0) - ((selectedCaja.montoEfectivo || 0) + (selectedCaja.montoQR || 0))) > 0
                         ? 'text-sky-400'
                         : 'text-red-400'
                     }`}>
-                      Bs. {(selectedCaja.montoCierre - (selectedCaja.montoEfectivo + selectedCaja.montoQR)).toFixed(2)}
+                      Bs. {((selectedCaja.montoCierre || 0) - ((selectedCaja.montoEfectivo || 0) + (selectedCaja.montoQR || 0))).toFixed(2)}
                     </span>
                   </div>
                 </>
