@@ -1,33 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { AuthModal } from '../components/auth/AuthModal';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
-import { Scissors, LogIn, User, LayoutDashboard, LogOut } from 'lucide-react';
+import { LayoutDashboard, LogOut } from 'lucide-react';
 
 export const PublicLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authView, setAuthView] = useState<'login' | 'register'>('login');
-
-  const openAuth = (view: 'login' | 'register') => {
-    setAuthView(view);
-    setIsAuthOpen(true);
-  };
-
-  const handleAuthSuccess = () => {
-    setIsAuthOpen(false);
-    // Redirigir según rol
-    const u = JSON.parse(localStorage.getItem('user') || '{}');
-    if (u && u.role) {
-      if (u.role === 'ADMIN' || u.role === 'STAFF') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/mi-cuenta');
-      }
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-darkBg text-zinc-100">
@@ -46,7 +25,7 @@ export const PublicLayout: React.FC = () => {
               Reservar Cita
             </Link>
 
-            {user ? (
+            {user && (
               <div className="flex items-center gap-3">
                 <Link
                   to="/admin/dashboard"
@@ -62,15 +41,6 @@ export const PublicLayout: React.FC = () => {
                   className="text-xs uppercase tracking-widest text-zinc-500 hover:text-red-400 flex items-center gap-1 transition-colors"
                 >
                   <LogOut size={14} /> Salir
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => openAuth('login')}
-                  className="text-xs uppercase tracking-widest text-zinc-300 hover:text-white flex items-center gap-1 py-2"
-                >
-                  <LogIn size={14} /> Entrar
                 </button>
               </div>
             )}
@@ -92,14 +62,6 @@ export const PublicLayout: React.FC = () => {
           <p className="text-[10px] text-zinc-700">Minimalist & Dark Luxe Design</p>
         </div>
       </footer>
-
-      {/* Modal Autenticación */}
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        defaultView={authView}
-        onSuccess={handleAuthSuccess}
-      />
     </div>
   );
 };

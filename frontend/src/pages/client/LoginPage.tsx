@@ -26,13 +26,12 @@ export const LoginPage: React.FC = () => {
           <div className="bg-zinc-900 border border-zinc-800 w-10 h-10 flex items-center justify-center text-zinc-400 mx-auto">
             <Scissors size={20} />
           </div>
-          <h2 className="text-sm font-bold uppercase tracking-widest text-white">Ingresar a tu Cuenta</h2>
-          <p className="text-xs text-zinc-500">Accede para agendar turnos y ver tus puntos.</p>
+          <h2 className="text-sm font-bold uppercase tracking-widest text-white">Acceso Administrativo</h2>
+          <p className="text-xs text-zinc-500">Ingresa tus credenciales autorizadas.</p>
         </div>
 
         <LoginForm
           onSuccess={handleSuccess}
-          onToggleRegister={() => navigate('/register')}
         />
       </Card>
     </div>
