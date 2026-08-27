@@ -37,7 +37,25 @@ export const BookingPage: React.FC = () => {
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStylist, setSelectedStylist] = useState<Stylist | null>(null);
-  const [selectedDate, setSelectedDate] = useState('');
+  const getBoliviaTodayStr = () => {
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('fr-CA', {
+        timeZone: 'America/La_Paz',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(now);
+    } catch (e) {
+      const today = new Date();
+      const offset = today.getTimezoneOffset();
+      const localToday = new Date(today.getTime() - offset * 60 * 1000);
+      return localToday.toISOString().split('T')[0];
+    }
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getBoliviaTodayStr());
   const [selectedTime, setSelectedTime] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState<any>(null);
 

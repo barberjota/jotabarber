@@ -155,7 +155,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'El horario seleccionado ya no está disponible' });
     }
 
-    const startDateTime = new Date(`${date}T${time}:00`);
+    const startDateTime = new Date(`${date}T${time}:00-04:00`);
     const endDateTime = new Date(startDateTime.getTime() + service.duracionMin * 60000);
 
     let esPromoQuintoCorte = false;
@@ -276,7 +276,7 @@ export const updateBooking = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Servicio no encontrado o inactivo' });
     }
 
-    const startDateTime = new Date(`${date}T${time}:00`);
+    const startDateTime = new Date(`${date}T${time}:00-04:00`);
     const endDateTime = new Date(startDateTime.getTime() + service.duracionMin * 60000);
 
     const updated = await prisma.cita.update({

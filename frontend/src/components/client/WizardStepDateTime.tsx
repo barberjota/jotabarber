@@ -26,12 +26,23 @@ export const WizardStepDateTime: React.FC<WizardStepDateTimeProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fecha de hoy en formato local YYYY-MM-DD
+  // Fecha de hoy en formato Bolivia YYYY-MM-DD
   const getTodayStr = () => {
-    const today = new Date();
-    const offset = today.getTimezoneOffset();
-    const localToday = new Date(today.getTime() - offset * 60 * 1000);
-    return localToday.toISOString().split('T')[0];
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('fr-CA', {
+        timeZone: 'America/La_Paz',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(now);
+    } catch (e) {
+      const today = new Date();
+      const offset = today.getTimezoneOffset();
+      const localToday = new Date(today.getTime() - offset * 60 * 1000);
+      return localToday.toISOString().split('T')[0];
+    }
   };
 
   const minDate = getTodayStr();

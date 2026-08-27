@@ -8,12 +8,16 @@ export interface TimeSlot {
 export class AvailabilityService {
   /**
    * Genera los horarios disponibles para un estilista en una fecha específica para un servicio dado.
+   * Utiliza el huso horario de Bolivia (UTC-4) para evitar solapamientos y desfases horarios.
    */
   static async getAvailableSlots(
     stylistId: string,
     serviceId: string,
     dateStr: string // Formato "YYYY-MM-DD"
   ): Promise<string[]> {
+    // Bolivia (UTC-4)
+    const timezoneOffset = "-04:00";
+
     // 1. Obtener la duración del servicio
     const servicio = await prisma.servicio.findUnique({
       where: { id: serviceId },
@@ -25,10 +29,11 @@ export class AvailabilityService {
 
     const duracionMin = servicio.duracionMin;
 
-    // 2. Determinar el día de la semana para la fecha dada
-    // Usamos el formato "YYYY-MM-DD" con el inicio del día para evitar problemas de desfase horario
-    const targetDate = new Date(`${dateStr}T00:00:00`);
-    const dayOfWeek = targetDate.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+    // 2. Determinar el día de la semana para la fecha dada en Bolivia
+    // Parseando como YYYY-MM-DDT00:00:00-04:00 obtenemos exactamente ese día calendario
+    const startOfDay = new Date(`${dateStr}T00:00:00${timezoneOffset}`);
+    const endOfDay = new Date(`${dateStr}T23:59:59.999${timezoneOffset}`);
+    const dayOfWeek = startOfDay.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
 
     // 3. Obtener el horario del estilista para ese día
     const schedule = await prisma.horarioEstilista.findFirst({
@@ -44,9 +49,6 @@ export class AvailabilityService {
     }
 
     // 4. Obtener citas existentes para el estilista en esa fecha (excluyendo canceladas)
-    const startOfDay = new Date(`${dateStr}T00:00:00`);
-    const endOfDay = new Date(`${dateStr}T23:59:59.999`);
-
     const appointments = await prisma.cita.findMany({
       where: {
         estilistaId: stylistId,
@@ -75,7 +77,7 @@ export class AvailabilityService {
     const workStart = parseTimeToMinutes(schedule.horaInicio);
     const workEnd = parseTimeToMinutes(schedule.horaFin);
 
-    // Mapear citas existentes a intervalos en minutos
+    // Mapear citas existentes a intervalos en minutos de ese día
     const bookedIntervals = appointments.map((appt) => {
       const apptStart = Math.floor((appt.fechaHora.getTime() - startOfDay.getTime()) / 60000);
       const apptEnd = Math.floor((appt.fechaHoraFin.getTime() - startOfDay.getTime()) / 60000);
@@ -85,14 +87,22 @@ export class AvailabilityService {
     // 6. Generar bloques de tiempo (intervalos de 30 minutos)
     const availableSlots: string[] = [];
     const interval = 30; // Minutos entre slots
-    const now = new Date();
-    const isToday = dateStr === now.toISOString().split('T')[0];
+    
+    // Obtener la fecha actual en Bolivia
+    const nowBolivia = new Date(new Date().toLocaleString("en-US", { timeZone: "America/La_Paz" }));
+    const year = nowBolivia.getFullYear();
+    const month = String(nowBolivia.getMonth() + 1).padStart(2, '0');
+    const day = String(nowBolivia.getDate()).padStart(2, '0');
+    const boliviaDateStr = `${year}-${month}-${day}`;
+    
+    const isToday = dateStr === boliviaDateStr;
 
     for (let current = workStart; current + duracionMin <= workEnd; current += interval) {
-      // Validar si el slot está en el pasado (solo si es la fecha de hoy)
+      // Validar si el slot está en el pasado (solo si es la fecha de hoy en Bolivia)
       if (isToday) {
         const slotDateTime = new Date(startOfDay.getTime() + current * 60000);
-        if (slotDateTime <= now) {
+        // Comparación en milisegundos reales (UTC) contra el instante actual real (new Date())
+        if (slotDateTime.getTime() <= new Date().getTime()) {
           continue; // Omitir slots pasados
         }
       }

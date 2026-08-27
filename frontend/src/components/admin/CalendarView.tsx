@@ -64,10 +64,21 @@ export const CalendarView: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedStylistId, setSelectedStylistId] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const today = new Date();
-    const offset = today.getTimezoneOffset();
-    const localToday = new Date(today.getTime() - offset * 60 * 1000);
-    return localToday.toISOString().split('T')[0];
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('fr-CA', {
+        timeZone: 'America/La_Paz',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(now);
+    } catch (e) {
+      const today = new Date();
+      const offset = today.getTimezoneOffset();
+      const localToday = new Date(today.getTime() - offset * 60 * 1000);
+      return localToday.toISOString().split('T')[0];
+    }
   });
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -224,9 +235,39 @@ Detalles de tu turno:
     window.open(whatsappUrl, '_blank');
   };
 
+  const getBoliviaDateStr = (dateInput: Date | string) => {
+    try {
+      const d = new Date(dateInput);
+      const formatter = new Intl.DateTimeFormat('fr-CA', {
+        timeZone: 'America/La_Paz',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(d);
+    } catch (e) {
+      return new Date(dateInput).toISOString().split('T')[0];
+    }
+  };
+
+  const getBoliviaTimeStr = (dateInput: Date | string) => {
+    try {
+      const d = new Date(dateInput);
+      const formatter = new Intl.DateTimeFormat('es-BO', {
+        timeZone: 'America/La_Paz',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      return formatter.format(d);
+    } catch (e) {
+      return new Date(dateInput).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+  };
+
   const handleStartEdit = (appt: Appointment) => {
-    const originalDate = new Date(appt.dateTime).toISOString().split('T')[0];
-    const originalTime = new Date(appt.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const originalDate = getBoliviaDateStr(appt.dateTime);
+    const originalTime = getBoliviaTimeStr(appt.dateTime);
 
     setEditingAppt(appt);
     setEditStylistId(appt.stylist.id);
