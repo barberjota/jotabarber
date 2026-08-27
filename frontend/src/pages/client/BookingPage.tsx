@@ -50,7 +50,7 @@ export const BookingPage: React.FC = () => {
     setStep(3);
   };
 
-  const handleConfirmBooking = async (notes: string) => {
+  const handleConfirmBooking = async (clientName: string, clientPhone: string, notes: string) => {
     if (!selectedService || !selectedStylist || !selectedDate || !selectedTime) return;
 
     try {
@@ -59,11 +59,15 @@ export const BookingPage: React.FC = () => {
         stylistId: selectedStylist.id,
         date: selectedDate,
         time: selectedTime,
+        clientName,
+        clientPhone,
         notes,
       });
 
       setBookingSuccess(res.data);
-      await refreshProfile(); // Recargar datos de puntos/cortes
+      if (user) {
+        await refreshProfile();
+      }
     } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Error al guardar la reserva');
     }
@@ -77,51 +81,6 @@ export const BookingPage: React.FC = () => {
     setSelectedTime('');
     setBookingSuccess(null);
   };
-
-  // Si no está logueado, mostrar pantalla de bloqueo / invitación a iniciar sesión
-  if (!user) {
-    return (
-      <div className="max-w-md mx-auto px-4 py-20">
-        <Card className="text-center space-y-6 p-8 border-zinc-800">
-          <div className="bg-zinc-900 w-12 h-12 flex items-center justify-center text-zinc-400 mx-auto border border-zinc-800">
-            <Scissors size={24} />
-          </div>
-          <h2 className="text-sm font-bold uppercase tracking-widest text-white">Reserva tu Turno</h2>
-          <p className="text-xs text-zinc-400 leading-relaxed">
-            Para agendar turnos online, verificar la disponibilidad de los barberos, y acumular cortes automáticos para tu tarjeta de fidelidad, debes tener una cuenta activa.
-          </p>
-          <div className="flex flex-col gap-3 pt-2">
-            <Button
-              onClick={() => {
-                setAuthView('login');
-                setIsAuthModalOpen(true);
-              }}
-              variant="primary"
-              fullWidth
-            >
-              Iniciar Sesión
-            </Button>
-            <Button
-              onClick={() => {
-                setAuthView('register');
-                setIsAuthModalOpen(true);
-              }}
-              variant="outline"
-              fullWidth
-            >
-              Registrarse Gratis
-            </Button>
-          </div>
-        </Card>
-
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          defaultView={authView}
-        />
-      </div>
-    );
-  }
 
   // Pantalla de Éxito
   if (bookingSuccess) {
@@ -201,7 +160,7 @@ export const BookingPage: React.FC = () => {
           <WizardStepService
             selectedServiceId={selectedService?.id || ''}
             onSelect={handleServiceSelect}
-            completedCuts={user.completedCuts}
+            completedCuts={user ? user.completedCuts : 0}
           />
         )}
         {step === 2 && (
@@ -233,7 +192,7 @@ export const BookingPage: React.FC = () => {
             stylist={selectedStylist}
             date={selectedDate}
             time={selectedTime}
-            completedCuts={user.completedCuts}
+            completedCuts={user ? user.completedCuts : 0}
             onConfirm={handleConfirmBooking}
             onBack={() => setStep(3)}
           />

@@ -4,7 +4,6 @@ import { AuthProvider } from './hooks/useAuth';
 
 // Layouts
 import { PublicLayout } from './layouts/PublicLayout';
-import { ClientLayout } from './layouts/ClientLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 
 // Client Pages
@@ -12,8 +11,6 @@ import { HomePage } from './pages/client/HomePage';
 import { LoginPage } from './pages/client/LoginPage';
 import { RegisterPage } from './pages/client/RegisterPage';
 import { BookingPage } from './pages/client/BookingPage';
-import { ProfileLoyaltyPage } from './pages/client/ProfileLoyaltyPage';
-import { MyAppointmentsPage } from './pages/client/MyAppointmentsPage';
 
 // Admin Pages
 import { DashboardPage } from './pages/admin/DashboardPage';
@@ -34,12 +31,6 @@ const App: React.FC = () => {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="reservar" element={<BookingPage />} />
-          </Route>
-
-          {/* Portal de Cliente Protegido */}
-          <Route path="/mi-cuenta" element={<ClientLayout />}>
-            <Route index element={<ProfileLoyaltyPage />} />
-            <Route path="citas" element={<MyAppointmentsPage />} />
           </Route>
 
           {/* Portal Administrativo Protegido (Admin / Staff) */}

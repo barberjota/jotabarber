@@ -100,19 +100,50 @@ export const getBookings = async (req: AuthRequest, res: Response) => {
 };
 
 export const createBooking = async (req: AuthRequest, res: Response) => {
-  if (!req.user) return res.status(401).json({ message: 'No autenticado' });
-
-  const { stylistId, serviceId, date, time, notes } = req.body;
-  let targetUserId = req.user.id;
-  if ((req.user.role === Rol.ADMIN || req.user.role === Rol.STAFF) && req.body.userId) {
-    targetUserId = req.body.userId;
-  }
+  const { stylistId, serviceId, date, time, notes, clientName, clientPhone, userId } = req.body;
 
   if (!stylistId || !serviceId || !date || !time) {
     return res.status(400).json({ message: 'stylistId, serviceId, date y time son obligatorios' });
   }
 
   try {
+    let targetUserId = userId;
+
+    // Si el usuario está autenticado y no se especificó un userId en el body
+    if (req.user && !targetUserId) {
+      targetUserId = req.user.id;
+    }
+
+    // Si es una reserva pública o el admin nos pasa datos de cliente directamente
+    if (!targetUserId && clientPhone && clientName) {
+      let userObj = await prisma.usuario.findUnique({ where: { telefono: clientPhone } });
+      if (!userObj) {
+        // Registrar cliente nuevo automáticamente
+        userObj = await prisma.usuario.create({
+          data: {
+            nombre: clientName,
+            telefono: clientPhone,
+            password: '$2b$10$Z3BiaXNoMTIzNDU2Nzg5MGFiY2RlZg==', // Hash dummy para satisfacer schema
+            rol: Rol.CLIENTE,
+          },
+        });
+      } else {
+        // Si el cliente existe pero su nombre cambió, lo actualizamos
+        if (userObj.nombre !== clientName) {
+          userObj = await prisma.usuario.update({
+            where: { id: userObj.id },
+            data: { nombre: clientName },
+          });
+        }
+      }
+      targetUserId = userObj.id;
+    }
+
+    // Si no pudimos determinar un usuario, rechazar
+    if (!targetUserId) {
+      return res.status(400).json({ message: 'Debe ingresar nombre y teléfono de contacto para la reserva.' });
+    }
+
     const user = await prisma.usuario.findUnique({ where: { id: targetUserId } });
     const service = await prisma.servicio.findUnique({ where: { id: serviceId } });
 

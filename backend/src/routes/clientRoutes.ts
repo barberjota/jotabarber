@@ -16,13 +16,13 @@ router.get('/services', getServices);
 router.get('/stylists', getStylists);
 router.get('/products', getProducts);
 router.get('/availability', getAvailability);
+router.post('/appointments', createBooking);
 
 // Rutas protegidas para clientes (y accesibles para personal/admin)
 router.use(authGuard);
 router.use(roleGuard([Rol.CLIENTE, Rol.STAFF, Rol.ADMIN]));
 
 router.get('/appointments', getBookings);
-router.post('/appointments', createBooking);
 router.post('/appointments/:id/cancel', cancelBooking);
 
 router.get('/loyalty/dashboard', getLoyaltyDashboard);
