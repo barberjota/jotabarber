@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ProductTable } from '../../components/admin/ProductTable';
 import { QuickSaleModal } from '../../components/admin/QuickSaleModal';
 import { Button } from '../../components/ui/Button';
@@ -22,7 +23,20 @@ import {
 import api from '../../services/api';
 
 export const ProductsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'orders' | 'caja'>('inventory');
+  const location = useLocation();
+  const isProductsCrudView = location.pathname === '/admin/productos';
+
+  const [activeTab, setActiveTab] = useState<'inventory' | 'orders' | 'caja'>(
+    isProductsCrudView ? 'inventory' : 'orders'
+  );
+
+  useEffect(() => {
+    if (isProductsCrudView) {
+      setActiveTab('inventory');
+    } else {
+      setActiveTab('orders');
+    }
+  }, [isProductsCrudView]);
   const [isPOSOpen, setIsPOSOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -355,14 +369,23 @@ export const ProductsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Cabecera de Página */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-lg font-bold uppercase tracking-widest text-white flex items-center gap-2">
-            <Box className="text-zinc-400" /> POS, Ventas & Caja
-          </h2>
-          <p className="text-xs text-zinc-500 mt-1">Registra ventas, administra pedidos y controla la caja diaria.</p>
-        </div>
+        {isProductsCrudView ? (
+          <div>
+            <h2 className="text-lg font-bold uppercase tracking-widest text-white flex items-center gap-2">
+              <Box className="text-zinc-400" /> Productos (Stock)
+            </h2>
+            <p className="text-xs text-zinc-500 mt-1">Administra el inventario de productos, precios y niveles de stock.</p>
+          </div>
+        ) : (
+          <div>
+            <h2 className="text-lg font-bold uppercase tracking-widest text-white flex items-center gap-2">
+              <Box className="text-zinc-400" /> POS, Ventas & Caja
+            </h2>
+            <p className="text-xs text-zinc-500 mt-1">Registra ventas, administra pedidos y controla la caja diaria.</p>
+          </div>
+        )}
 
-        {cajaStatus === 'open' && (
+        {!isProductsCrudView && cajaStatus === 'open' && (
           <Button
             onClick={() => setIsPOSOpen(true)}
             variant="primary"
@@ -374,38 +397,30 @@ export const ProductsPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-zinc-900 mb-6">
-        <button
-          onClick={() => setActiveTab('inventory')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors ${
-            activeTab === 'inventory'
-              ? 'border-white text-white'
-              : 'border-transparent text-zinc-500 hover:text-zinc-300'
-          }`}
-        >
-          <Box size={14} /> Inventario
-        </button>
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors ${
-            activeTab === 'orders'
-              ? 'border-white text-white'
-              : 'border-transparent text-zinc-500 hover:text-zinc-300'
-          }`}
-        >
-          <History size={14} /> Pedidos & Reservas
-        </button>
-        <button
-          onClick={() => setActiveTab('caja')}
-          className={`flex items-center gap-1.5 px-4 py-2.5 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors ${
-            activeTab === 'caja'
-              ? 'border-white text-white'
-              : 'border-transparent text-zinc-500 hover:text-zinc-300'
-          }`}
-        >
-          <DollarSign size={14} /> Control de Caja
-        </button>
-      </div>
+      {!isProductsCrudView && (
+        <div className="flex border-b border-zinc-900 mb-6">
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors ${
+              activeTab === 'orders'
+                ? 'border-white text-white'
+                : 'border-transparent text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <History size={14} /> Pedidos & Reservas
+          </button>
+          <button
+            onClick={() => setActiveTab('caja')}
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-xs uppercase tracking-wider font-semibold border-b-2 transition-colors ${
+              activeTab === 'caja'
+                ? 'border-white text-white'
+                : 'border-transparent text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <DollarSign size={14} /> Control de Caja
+          </button>
+        </div>
+      )}
 
       {/* Renders de Tab */}
       {activeTab === 'inventory' && (
