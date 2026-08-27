@@ -116,11 +116,11 @@ export const BookingPage: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-3 pt-2">
-            <Button onClick={() => navigate('/mi-cuenta/citas')} variant="outline" fullWidth className="flex items-center justify-center gap-1.5">
-              <CalendarDays size={14} /> Ver mis citas
-            </Button>
             <Button onClick={handleReset} variant="primary" fullWidth>
               Agendar otro turno
+            </Button>
+            <Button onClick={() => navigate('/')} variant="outline" fullWidth>
+              Volver al inicio
             </Button>
           </div>
         </Card>
