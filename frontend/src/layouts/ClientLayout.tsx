@@ -93,8 +93,18 @@ export const ClientLayout: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-900 bg-black/40 py-6 text-center text-[10px] text-zinc-700 uppercase tracking-widest">
-        JotaBarber Fidelidad Portal © {new Date().getFullYear()}
+      <footer className="border-t border-zinc-900 bg-black/40 py-6 text-center text-[10px] text-zinc-700 uppercase tracking-widest space-y-2">
+        <div className="flex justify-center">
+          <a
+            href="https://www.tiktok.com/@jota.barber1?_r=1&_t=ZS-98h7uTCDxau"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-500 hover:text-white transition-colors tracking-widest font-semibold uppercase"
+          >
+            TikTok Oficial
+          </a>
+        </div>
+        <div>JotaBarber Fidelidad Portal © {new Date().getFullYear()}</div>
       </footer>
     </div>
   );

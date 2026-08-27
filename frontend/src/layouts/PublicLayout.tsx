@@ -118,7 +118,17 @@ export const PublicLayout: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-zinc-900 bg-black/40 py-8 text-center text-xs text-zinc-600 uppercase tracking-widest">
-        <div className="max-w-7xl mx-auto px-4 space-y-2">
+        <div className="max-w-7xl mx-auto px-4 space-y-3">
+          <div className="flex justify-center">
+            <a
+              href="https://www.tiktok.com/@jota.barber1?_r=1&_t=ZS-98h7uTCDxau"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-zinc-500 hover:text-white transition-colors text-[9px] tracking-widest font-semibold uppercase"
+            >
+              TikTok Oficial
+            </a>
+          </div>
           <p>© {new Date().getFullYear()} JotaBarber. Todos los derechos reservados.</p>
           <p className="text-[10px] text-zinc-700">Minimalist & Dark Luxe Design</p>
         </div>
