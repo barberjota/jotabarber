@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { AuthModal } from '../../components/auth/AuthModal';
 import { WizardStepService } from '../../components/client/WizardStepService';
@@ -26,6 +26,7 @@ interface Stylist {
 
 export const BookingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, refreshProfile } = useAuth();
   
   // Modales y Auth
@@ -39,6 +40,28 @@ export const BookingPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState<any>(null);
+
+  // Leer parámetro de la URL para pre-seleccionar servicio
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const serviceIdParam = queryParams.get('serviceId');
+
+    if (serviceIdParam) {
+      const selectServiceFromParam = async () => {
+        try {
+          const res = await api.get('/client/services');
+          const found = res.data.find((s: any) => s.id === serviceIdParam);
+          if (found) {
+            setSelectedService(found);
+            setStep(2); // Avanzar directamente al barbero
+          }
+        } catch (err) {
+          console.error('Error al pre-seleccionar servicio por URL:', err);
+        }
+      };
+      selectServiceFromParam();
+    }
+  }, [location.search]);
 
   const handleServiceSelect = (service: Service) => {
     setSelectedService(service);

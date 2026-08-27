@@ -6,7 +6,7 @@ import { getStylists } from '../controllers/stylistsController';
 import { getProducts } from '../controllers/productsController';
 import { getAvailability, getBookings, createBooking, cancelBooking } from '../controllers/appointmentsController';
 import { getLoyaltyDashboard, getLoyaltyHistory } from '../controllers/loyaltyController';
-import { redeemProduct } from '../controllers/salesController';
+import { redeemProduct, createPublicOrder } from '../controllers/salesController';
 import { Rol } from '@prisma/client';
 
 const router = Router();
@@ -17,6 +17,7 @@ router.get('/stylists', getStylists);
 router.get('/products', getProducts);
 router.get('/availability', getAvailability);
 router.post('/appointments', createBooking);
+router.post('/orders', createPublicOrder);
 
 // Rutas protegidas para clientes (y accesibles para personal/admin)
 router.use(authGuard);

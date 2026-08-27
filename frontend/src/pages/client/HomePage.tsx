@@ -4,6 +4,7 @@ import api from '../../services/api';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Scissors, ShieldCheck, Gift, Star, Clock, Target, Eye, Package } from 'lucide-react';
+import { useCart } from '../../context/CartContext';
 
 interface Service {
   id: string;
@@ -24,6 +25,7 @@ interface Product {
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,12 +174,17 @@ export const HomePage: React.FC = () => {
                   </div>
                   <p className="text-[11px] text-zinc-400 mt-2 leading-relaxed">{service.description || 'Experiencia premium garantizada.'}</p>
                 </div>
-                <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-zinc-500 border-t border-zinc-900 pt-3">
-                  <span className="flex items-center gap-1">
-                    <Clock size={10} /> {service.durationMin} MIN
-                  </span>
-                  <span>Corte Fiel ✔</span>
-                </div>
+                 <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-zinc-500 border-t border-zinc-900 pt-3">
+                   <span className="flex items-center gap-1">
+                     <Clock size={10} /> {service.durationMin} MIN
+                   </span>
+                   <button
+                     onClick={() => navigate(`/reservar?serviceId=${service.id}`)}
+                     className="text-white hover:underline font-bold uppercase text-[9px] tracking-widest cursor-pointer"
+                   >
+                     Reservar →
+                   </button>
+                 </div>
               </Card>
             ))}
           </div>
@@ -222,16 +229,29 @@ export const HomePage: React.FC = () => {
                   </div>
                   <p className="text-[11px] text-zinc-400 mt-2 leading-relaxed">{product.description || 'Cuidado y acabado profesional.'}</p>
                 </div>
-                <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-zinc-500 border-t border-zinc-900 pt-3">
-                  <span className="flex items-center gap-1">
-                    <Package size={10} /> Stock: {product.stock} unid.
-                  </span>
-                  {product.stock > 0 ? (
-                    <span className="text-emerald-400 font-semibold">Disponible</span>
-                  ) : (
-                    <span className="text-red-400 font-semibold">Agotado</span>
-                  )}
-                </div>
+                 <div className="space-y-3">
+                   <div className="flex justify-between items-center text-[9px] uppercase tracking-widest text-zinc-500 border-t border-zinc-900 pt-3">
+                     <span className="flex items-center gap-1">
+                       <Package size={10} /> Stock: {product.stock} unid.
+                     </span>
+                     {product.stock > 0 ? (
+                       <span className="text-emerald-400 font-semibold">Disponible</span>
+                     ) : (
+                       <span className="text-red-400 font-semibold">Agotado</span>
+                     )}
+                   </div>
+                   {product.stock > 0 && (
+                     <Button
+                       onClick={() => addToCart(product)}
+                       variant="outline"
+                       size="sm"
+                       fullWidth
+                       className="text-[9px] uppercase tracking-widest font-bold py-1.5"
+                     >
+                       Agregar al Carrito
+                     </Button>
+                   )}
+                 </div>
               </Card>
             ))}
           </div>

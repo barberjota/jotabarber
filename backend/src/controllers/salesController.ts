@@ -261,3 +261,123 @@ export const getDashboardMetrics = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({ message: 'Error al obtener métricas del panel', error: error.message });
   }
 };
+
+export const createPublicOrder = async (req: AuthRequest, res: Response) => {
+  const { clientName, clientPhone, items } = req.body;
+
+  if (!clientName || !clientPhone) {
+    return res.status(400).json({ message: 'Nombre y teléfono son obligatorios' });
+  }
+
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ message: 'Debe incluir al menos un producto' });
+  }
+
+  try {
+    // 1. Buscar o registrar al usuario por su número de teléfono
+    let userObj = await prisma.usuario.findUnique({ where: { telefono: clientPhone } });
+    if (!userObj) {
+      userObj = await prisma.usuario.create({
+        data: {
+          nombre: clientName,
+          telefono: clientPhone,
+          password: '$2b$10$Z3BiaXNoMTIzNDU2Nzg5MGFiY2RlZg==', // Hash genérico
+          rol: Rol.CLIENTE,
+        },
+      });
+    } else {
+      if (userObj.nombre !== clientName) {
+        userObj = await prisma.usuario.update({
+          where: { id: userObj.id },
+          data: { nombre: clientName },
+        });
+      }
+    }
+
+    const userId = userObj.id;
+
+    const saleResult = await prisma.$transaction(async (tx) => {
+      let subtotal = 0;
+      const saleItemsToCreate = [];
+
+      for (const item of items) {
+        const product = await tx.producto.findUnique({
+          where: { id: item.productId },
+        });
+
+        if (!product || !product.isActive) {
+          throw new Error(`Producto ${item.productId} no encontrado o inactivo`);
+        }
+
+        if (product.stock < item.quantity) {
+          throw new Error(`Stock insuficiente para ${product.nombre} (Disponibles: ${product.stock})`);
+        }
+
+        const price = Number(product.precio);
+        subtotal += price * item.quantity;
+
+        // Descontar stock
+        await tx.producto.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } },
+        });
+
+        saleItemsToCreate.push({
+          productoId: item.productId,
+          cantidad: item.quantity,
+          precioUnit: price,
+        });
+      }
+
+      const total = subtotal;
+      const pointsAwarded = Math.floor(total);
+
+      const sale = await tx.venta.create({
+        data: {
+          usuarioId: userId,
+          subtotal,
+          descuento: 0,
+          total,
+          puntosGanados: pointsAwarded,
+          puntosUsados: 0,
+          items: {
+            create: saleItemsToCreate,
+          },
+        },
+        include: {
+          items: true,
+        },
+      });
+
+      // Sumar puntos de fidelidad acumulados
+      if (pointsAwarded > 0) {
+        await tx.usuario.update({
+          where: { id: userId },
+          data: {
+            saldoPuntos: {
+              increment: pointsAwarded,
+            },
+          },
+        });
+
+        await tx.historialFidelidad.create({
+          data: {
+            usuarioId: userId,
+            puntos: pointsAwarded,
+            motivo: `Puntos ganados por reserva de productos (Venta ID: ${sale.id})`,
+          },
+        });
+      }
+
+      return sale;
+    });
+
+    return res.status(201).json({
+      message: 'Pedido reservado con éxito',
+      saleId: saleResult.id,
+      total: saleResult.total,
+    });
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || 'Error al procesar el pedido', error: error.message });
+  }
+};
