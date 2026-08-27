@@ -48,6 +48,52 @@ export const ProductsPage: React.FC = () => {
   const [salesLoading, setSalesLoading] = useState(false);
   const [filterEstado, setFilterEstado] = useState<string>('TODOS');
 
+  // Filtros de fecha para Pedidos/Ventas
+  const getBoliviaTodayStr = () => {
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('fr-CA', {
+        timeZone: 'America/La_Paz',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(now);
+    } catch (e) {
+      const today = new Date();
+      const offset = today.getTimezoneOffset();
+      const localToday = new Date(today.getTime() - offset * 60 * 1000);
+      return localToday.toISOString().split('T')[0];
+    }
+  };
+
+  const getBoliviaPastDateStr = (daysAgo: number) => {
+    try {
+      const now = new Date();
+      const past = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+      const formatter = new Intl.DateTimeFormat('fr-CA', {
+        timeZone: 'America/La_Paz',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(past);
+    } catch (e) {
+      const today = new Date();
+      const past = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
+      const offset = past.getTimezoneOffset();
+      const localPast = new Date(past.getTime() - offset * 60 * 1000);
+      return localPast.toISOString().split('T')[0];
+    }
+  };
+
+  const [startDate, setStartDate] = useState(getBoliviaPastDateStr(30));
+  const [endDate, setEndDate] = useState(getBoliviaTodayStr());
+
+  // Paginación de Pedidos/Ventas
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   // Modales de Pedidos
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -268,11 +314,42 @@ export const ProductsPage: React.FC = () => {
     return editItems.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0);
   };
 
-  // Filtrado de Pedidos
+  // Helper para formatear fecha de venta a la local de Bolivia para el filtro
+  const getSaleBoliviaDate = (createdAtStr: string) => {
+    try {
+      const d = new Date(createdAtStr);
+      const formatter = new Intl.DateTimeFormat('fr-CA', {
+        timeZone: 'America/La_Paz',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(d);
+    } catch (e) {
+      return new Date(createdAtStr).toISOString().split('T')[0];
+    }
+  };
+
+  // Resetear a la página 1 cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterEstado, startDate, endDate]);
+
+  // Filtrado de Pedidos por estado y rango de fechas
   const filteredSales = sales.filter((s) => {
-    if (filterEstado === 'TODOS') return true;
-    return s.estado === filterEstado;
+    const saleDate = getSaleBoliviaDate(s.createdAt);
+    const matchesStart = startDate ? saleDate >= startDate : true;
+    const matchesEnd = endDate ? saleDate <= endDate : true;
+    const matchesEstado = filterEstado === 'TODOS' ? true : s.estado === filterEstado;
+    return matchesStart && matchesEnd && matchesEstado;
   });
+
+  // Cálculos de Paginación
+  const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
+  const paginatedSales = filteredSales.slice(
+    (currentPage - 1) * itemsPerPage,
+    (currentPage - 1) * itemsPerPage + itemsPerPage
+  );
 
   return (
     <div className="space-y-6">
@@ -338,13 +415,14 @@ export const ProductsPage: React.FC = () => {
       {activeTab === 'orders' && (
         <div className="space-y-4">
           {/* Barra de Filtros */}
-          <div className="flex flex-wrap justify-between items-center gap-4 bg-zinc-950 border border-zinc-900 p-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-zinc-950 border border-zinc-900 p-4">
+            {/* Estado */}
             <div className="flex gap-2">
               {['TODOS', 'PENDIENTE', 'COMPLETADO'].map((e) => (
                 <button
                   key={e}
                   onClick={() => setFilterEstado(e)}
-                  className={`px-3 py-1.5 text-[10px] uppercase font-bold tracking-widest border transition-colors ${
+                  className={`px-3 py-1.5 text-[10px] uppercase font-bold tracking-widest border transition-colors cursor-pointer ${
                     filterEstado === e
                       ? 'bg-white border-white text-black font-semibold'
                       : 'border-zinc-800 text-zinc-400 hover:text-white'
@@ -353,6 +431,39 @@ export const ProductsPage: React.FC = () => {
                   {e}s
                 </button>
               ))}
+            </div>
+
+            {/* Rango de Fechas */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-medium">Desde:</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-zinc-900 border border-zinc-800 px-2 py-1 text-[10px] text-white focus:outline-none focus:border-zinc-500 rounded-none uppercase font-mono"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-medium">Hasta:</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-zinc-900 border border-zinc-800 px-2 py-1 text-[10px] text-white focus:outline-none focus:border-zinc-500 rounded-none uppercase font-mono"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button
+                  onClick={() => {
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                  className="text-[9px] uppercase font-bold text-zinc-500 hover:text-white transition-colors border border-zinc-800 px-2 py-1 ml-1 cursor-pointer"
+                >
+                  Limpiar Filtro
+                </button>
+              )}
             </div>
           </div>
 
@@ -364,7 +475,8 @@ export const ProductsPage: React.FC = () => {
               No hay pedidos en este estado.
             </div>
           ) : (
-            <div className="bg-zinc-950 border border-zinc-900 overflow-x-auto">
+            <>
+              <div className="bg-zinc-950 border border-zinc-900 overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-zinc-900 text-[10px] uppercase tracking-widest text-zinc-400 bg-zinc-900/20">
@@ -377,7 +489,7 @@ export const ProductsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-900 text-xs">
-                  {filteredSales.map((s: any) => (
+                  {paginatedSales.map((s: any) => (
                     <tr key={s.id} className="hover:bg-zinc-900/20 transition-colors">
                       <td className="p-4 space-y-1">
                         <span className="font-bold text-white block uppercase tracking-wider text-[10px]">#{s.id.substring(0, 8)}</span>
@@ -456,7 +568,35 @@ export const ProductsPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          )}
+
+            {/* Paginación */}
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center bg-zinc-950 border-x border-b border-zinc-900 p-4">
+                <Button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] uppercase font-bold tracking-wider cursor-pointer"
+                >
+                  Anterior
+                </Button>
+                <span className="text-[10px] text-zinc-400 font-mono">
+                  Página {currentPage} de {totalPages} ({filteredSales.length} registros)
+                </span>
+                <Button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] uppercase font-bold tracking-wider cursor-pointer"
+                >
+                  Siguiente
+                </Button>
+              </div>
+            )}
+          </>
+        )}
         </div>
       )}
 
