@@ -143,15 +143,17 @@ model ItemVenta {
 }
 
 model Caja {
-  id             String     @id @default(uuid())
-  usuarioId      String
-  usuario        Usuario    @relation(fields: [usuarioId], references: [id])
-  estado         String     @default("ABIERTA") // "ABIERTA", "CERRADA"
-  montoApertura  Decimal    @db.Decimal(10, 2)
-  montoCierre    Decimal?   @db.Decimal(10, 2)
-  montoEfectivo  Decimal    @default(0.00) @db.Decimal(10, 2)
-  montoQR        Decimal    @default(0.00) @db.Decimal(10, 2)
-  ventas         Venta[]
-  createdAt      DateTime   @default(now())
-  closedAt       DateTime?
+  id                  String     @id @default(uuid())
+  usuarioId           String
+  usuario             Usuario    @relation(fields: [usuarioId], references: [id])
+  estado              String     @default("ABIERTA") // "ABIERTA", "CERRADA"
+  montoApertura       Decimal    @db.Decimal(10, 2)
+  montoCierre         Decimal?   @db.Decimal(10, 2)
+  montoEfectivo       Decimal    @default(0.00) @db.Decimal(10, 2)
+  montoQR             Decimal    @default(0.00) @db.Decimal(10, 2)
+  montoCierreEfectivo Decimal?   @db.Decimal(10, 2)
+  montoCierreQR       Decimal?   @db.Decimal(10, 2)
+  ventas              Venta[]
+  createdAt           DateTime   @default(now())
+  closedAt            DateTime?
 }

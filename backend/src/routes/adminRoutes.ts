@@ -8,7 +8,7 @@ import { getBookings, createBooking, updateBookingStatus, cancelBooking, updateB
 import { getSales, createSale, deleteSale, updateSale, checkoutOrder, getDashboardMetrics } from '../controllers/salesController';
 import { getCustomersList, adjustLoyaltyManual } from '../controllers/loyaltyController';
 import { uploadMiddleware, uploadImage } from '../controllers/uploadController';
-import { getActiveCaja, openCaja, closeCaja } from '../controllers/cajaController';
+import { getActiveCaja, openCaja, closeCaja, getCajasHistory, updateCaja, deleteCaja } from '../controllers/cajaController';
 import { Rol } from '@prisma/client';
 
 const router = Router();
@@ -42,6 +42,9 @@ router.post('/sales/:id/checkout', checkoutOrder);
 router.get('/caja/active', getActiveCaja);
 router.post('/caja/open', openCaja);
 router.post('/caja/close', closeCaja);
+router.get('/caja/history', getCajasHistory);
+router.put('/caja/:id', updateCaja);
+router.delete('/caja/:id', deleteCaja);
 
 // Métricas de Dashboard (STAFF/ADMIN)
 router.get('/metrics', getDashboardMetrics);

@@ -71,10 +71,13 @@ export const openCaja = async (req: AuthRequest, res: Response) => {
 };
 
 export const closeCaja = async (req: AuthRequest, res: Response) => {
-  const { montoCierre } = req.body;
+  const { montoCierreEfectivo, montoCierreQR } = req.body;
 
-  if (montoCierre === undefined || Number(montoCierre) < 0) {
-    return res.status(400).json({ message: 'Monto de cierre inválido.' });
+  if (montoCierreEfectivo === undefined || Number(montoCierreEfectivo) < 0) {
+    return res.status(400).json({ message: 'Monto de cierre de efectivo inválido.' });
+  }
+  if (montoCierreQR === undefined || Number(montoCierreQR) < 0) {
+    return res.status(400).json({ message: 'Monto de cierre de QR inválido.' });
   }
 
   try {
@@ -86,11 +89,15 @@ export const closeCaja = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'No hay ninguna caja abierta para cerrar.' });
     }
 
+    const totalCierre = Number(montoCierreEfectivo) + Number(montoCierreQR);
+
     const cerrada = await prisma.caja.update({
       where: { id: activeCaja.id },
       data: {
         estado: 'CERRADA',
-        montoCierre: Number(montoCierre),
+        montoCierre: totalCierre,
+        montoCierreEfectivo: Number(montoCierreEfectivo),
+        montoCierreQR: Number(montoCierreQR),
         closedAt: new Date(),
       },
     });
@@ -98,5 +105,93 @@ export const closeCaja = async (req: AuthRequest, res: Response) => {
     return res.json({ message: 'Caja cerrada con éxito.', caja: cerrada });
   } catch (error: any) {
     return res.status(500).json({ message: 'Error al cerrar caja', error: error.message });
+  }
+};
+
+export const getCajasHistory = async (req: AuthRequest, res: Response) => {
+  try {
+    const history = await prisma.caja.findMany({
+      include: {
+        usuario: { select: { nombre: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return res.json(
+      history.map((c) => ({
+        id: c.id,
+        usuarioId: c.usuarioId,
+        usuarioNombre: c.usuario.nombre,
+        estado: c.estado,
+        montoApertura: Number(c.montoApertura),
+        montoEfectivo: Number(c.montoEfectivo),
+        montoQR: Number(c.montoQR),
+        montoCierre: c.montoCierre ? Number(c.montoCierre) : null,
+        montoCierreEfectivo: c.montoCierreEfectivo ? Number(c.montoCierreEfectivo) : null,
+        montoCierreQR: c.montoCierreQR ? Number(c.montoCierreQR) : null,
+        createdAt: c.createdAt,
+        closedAt: c.closedAt,
+      }))
+    );
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Error al obtener historial de cajas', error: error.message });
+  }
+};
+
+export const updateCaja = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { montoCierreEfectivo, montoCierreQR } = req.body;
+
+  if (montoCierreEfectivo === undefined || Number(montoCierreEfectivo) < 0) {
+    return res.status(400).json({ message: 'Monto de cierre de efectivo inválido.' });
+  }
+  if (montoCierreQR === undefined || Number(montoCierreQR) < 0) {
+    return res.status(400).json({ message: 'Monto de cierre de QR inválido.' });
+  }
+
+  try {
+    const caja = await prisma.caja.findUnique({ where: { id } });
+    if (!caja) {
+      return res.status(404).json({ message: 'Registro de caja no encontrado.' });
+    }
+
+    const totalCierre = Number(montoCierreEfectivo) + Number(montoCierreQR);
+
+    const updated = await prisma.caja.update({
+      where: { id },
+      data: {
+        montoCierre: totalCierre,
+        montoCierreEfectivo: Number(montoCierreEfectivo),
+        montoCierreQR: Number(montoCierreQR),
+      },
+    });
+
+    return res.json({ message: 'Registro de caja modificado con éxito.', caja: updated });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Error al modificar registro de caja', error: error.message });
+  }
+};
+
+export const deleteCaja = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  try {
+    const caja = await prisma.caja.findUnique({ where: { id } });
+    if (!caja) {
+      return res.status(404).json({ message: 'Registro de caja no encontrado.' });
+    }
+
+    // Desvincular ventas
+    await prisma.venta.updateMany({
+      where: { cajaId: id },
+      data: { cajaId: null },
+    });
+
+    await prisma.caja.delete({
+      where: { id },
+    });
+
+    return res.json({ message: 'Registro de caja eliminado con éxito.' });
+  } catch (error: any) {
+    return res.status(500).json({ message: 'Error al eliminar caja del historial', error: error.message });
   }
 };

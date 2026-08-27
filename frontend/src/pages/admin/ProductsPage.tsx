@@ -16,7 +16,8 @@ import {
   AlertCircle,
   Plus,
   Minus,
-  X
+  Calendar,
+  User
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -25,12 +26,22 @@ export const ProductsPage: React.FC = () => {
   const [isPOSOpen, setIsPOSOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Estados de Caja
+  // Estados de Caja Activa
   const [cajaStatus, setCajaStatus] = useState<'open' | 'closed'>('closed');
   const [activeCaja, setActiveCaja] = useState<any>(null);
   const [montoApertura, setMontoApertura] = useState('');
-  const [montoCierre, setMontoCierre] = useState('');
+  const [montoCierreEfectivo, setMontoCierreEfectivo] = useState('');
+  const [montoCierreQR, setMontoCierreQR] = useState('');
   const [cajaLoading, setCajaLoading] = useState(false);
+
+  // Historial de Cajas
+  const [cajasHistory, setCajasHistory] = useState<any[]>([]);
+  const [cajasHistoryLoading, setCajasHistoryLoading] = useState(false);
+  const [selectedCaja, setSelectedCaja] = useState<any>(null);
+  const [isCajaDetailsOpen, setIsCajaDetailsOpen] = useState(false);
+  const [isCajaEditOpen, setIsCajaEditOpen] = useState(false);
+  const [editCajaEfectivo, setEditCajaEfectivo] = useState('');
+  const [editCajaQR, setEditCajaQR] = useState('');
 
   // Estados de Pedidos/Ventas
   const [sales, setSales] = useState<any[]>([]);
@@ -61,6 +72,18 @@ export const ProductsPage: React.FC = () => {
     }
   };
 
+  const fetchCajasHistory = async () => {
+    setCajasHistoryLoading(true);
+    try {
+      const res = await api.get('/admin/caja/history');
+      setCajasHistory(res.data);
+    } catch (err) {
+      console.error('Error al obtener historial de cajas:', err);
+    } finally {
+      setCajasHistoryLoading(false);
+    }
+  };
+
   const fetchSales = async () => {
     setSalesLoading(true);
     try {
@@ -86,6 +109,7 @@ export const ProductsPage: React.FC = () => {
     fetchCajaStatus();
     fetchSales();
     fetchProducts();
+    fetchCajasHistory();
   }, [refreshKey]);
 
   const handlePOSSuccess = () => {
@@ -110,18 +134,56 @@ export const ProductsPage: React.FC = () => {
 
   const handleCloseCaja = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!montoCierre || Number(montoCierre) < 0) {
-      alert('Ingresa un monto de cierre válido.');
+    if (montoCierreEfectivo === '' || montoCierreQR === '') {
+      alert('Por favor ingresa los montos contados de efectivo y QR.');
       return;
     }
-    if (!window.confirm('¿Está seguro de que desea cerrar la caja del turno actual?')) return;
+    if (!window.confirm('¿Confirmar cierre ciego de caja del turno actual? Se validará si existen desviaciones.')) return;
     try {
-      await api.post('/admin/caja/close', { montoCierre: Number(montoCierre) });
+      await api.post('/admin/caja/close', {
+        montoCierreEfectivo: Number(montoCierreEfectivo),
+        montoCierreQR: Number(montoCierreQR),
+      });
       alert('Caja cerrada con éxito.');
-      setMontoCierre('');
+      setMontoCierreEfectivo('');
+      setMontoCierreQR('');
       setRefreshKey((prev) => prev + 1);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error al cerrar caja');
+    }
+  };
+
+  const handleDeleteCaja = async (id: string) => {
+    if (!window.confirm('¿Está seguro de que desea eliminar este registro de caja? Las ventas del turno serán desvinculadas.')) return;
+    try {
+      await api.delete(`/admin/caja/${id}`);
+      alert('Registro de caja eliminado con éxito.');
+      setRefreshKey((prev) => prev + 1);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al eliminar registro de caja');
+    }
+  };
+
+  const handleStartCajaEdit = (caja: any) => {
+    setSelectedCaja(caja);
+    setEditCajaEfectivo(caja.montoCierreEfectivo?.toString() || '0');
+    setEditCajaQR(caja.montoCierreQR?.toString() || '0');
+    setIsCajaEditOpen(true);
+  };
+
+  const handleSaveCajaEdit = async () => {
+    if (!selectedCaja) return;
+    try {
+      await api.put(`/admin/caja/${selectedCaja.id}`, {
+        montoCierreEfectivo: Number(editCajaEfectivo),
+        montoCierreQR: Number(editCajaQR),
+      });
+      alert('Cierre de caja modificado con éxito.');
+      setIsCajaEditOpen(false);
+      setSelectedCaja(null);
+      setRefreshKey((prev) => prev + 1);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al modificar cierre.');
     }
   };
 
@@ -399,68 +461,77 @@ export const ProductsPage: React.FC = () => {
       )}
 
       {activeTab === 'caja' && (
-        <div className="space-y-6">
+        <div className="space-y-10">
           {cajaLoading ? (
             <div className="text-center py-8 text-xs uppercase tracking-widest text-zinc-500">Cargando estado de caja...</div>
           ) : cajaStatus === 'open' && activeCaja ? (
-            /* Caja Abierta */
+            /* Caja Abierta: Cierre Ciego */
             <div className="space-y-6 animate-in fade-in duration-200">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
                 <Card className="p-5 border-zinc-800 space-y-2">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 block">Fondo Apertura</span>
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 block">Fondo Inicial de Apertura</span>
                   <p className="font-mono font-bold text-white text-base">Bs. {activeCaja.montoApertura.toFixed(2)}</p>
                 </Card>
                 <Card className="p-5 border-zinc-800 space-y-2">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 block">Cobros en Efectivo</span>
-                  <p className="font-mono font-bold text-emerald-400 text-base">Bs. {activeCaja.montoEfectivo.toFixed(2)}</p>
-                </Card>
-                <Card className="p-5 border-zinc-800 space-y-2">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 block">Cobros QR</span>
-                  <p className="font-mono font-bold text-sky-400 text-base">Bs. {activeCaja.montoQR.toFixed(2)}</p>
-                </Card>
-                <Card className="p-5 border-zinc-800 space-y-2 bg-zinc-900/20 border-white/5">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-semibold block">Total Estimado en Caja</span>
-                  <p className="font-mono font-bold text-white text-base">Bs. {activeCaja.totalGeneral.toFixed(2)}</p>
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 block">Hora de Apertura</span>
+                  <p className="font-bold text-zinc-300 text-sm">{new Date(activeCaja.createdAt).toLocaleString()}</p>
                 </Card>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 <Card className="p-6 border-zinc-800 space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-white">Cerrar Caja del Turno</h3>
+                  <div className="flex gap-2 items-center text-yellow-500">
+                    <AlertCircle size={16} />
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white">Cierre Ciego Obligatorio</h3>
+                  </div>
                   <p className="text-[11px] text-zinc-500 leading-relaxed">
-                    Verifica que las cuentas y los montos cuadren. Al cerrar la caja se consolidará el total en el historial general.
+                    Ingresa el monto contado físicamente en caja para Efectivo y el total reportado en la pasarela QR. **No se mostrarán los montos estimados por el sistema para asegurar la auditoría**.
                   </p>
                   <form onSubmit={handleCloseCaja} className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1">Monto Físico Real de Cierre (Bs.) *</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        required
-                        value={montoCierre}
-                        onChange={(e) => setMontoCierre(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none font-mono"
-                        placeholder="0.00"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1">Monto Efectivo Contado (Bs.) *</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          value={montoCierreEfectivo}
+                          onChange={(e) => setMontoCierreEfectivo(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none font-mono"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1">Monto QR Reportado (Bs.) *</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          value={montoCierreQR}
+                          onChange={(e) => setMontoCierreQR(e.target.value)}
+                          className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none font-mono"
+                          placeholder="0.00"
+                        />
+                      </div>
                     </div>
+
                     <Button type="submit" variant="primary" fullWidth>
-                      Confirmar y Cerrar Caja
+                      Confirmar Cierre de Caja
                     </Button>
                   </form>
                 </Card>
 
                 <Card className="p-6 border-zinc-800 space-y-2 text-xs">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-2">Información del Turno</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-2">Responsable</h3>
                   <div className="space-y-2 text-zinc-400">
-                    <p><span className="text-zinc-500 font-semibold uppercase text-[10px]">Cajero Responsable:</span> {activeCaja.usuarioNombre}</p>
-                    <p><span className="text-zinc-500 font-semibold uppercase text-[10px]">Hora de Apertura:</span> {new Date(activeCaja.createdAt).toLocaleString()}</p>
-                    <p><span className="text-zinc-500 font-semibold uppercase text-[10px]">Total Ventas Directas:</span> Bs. {activeCaja.totalVentas.toFixed(2)}</p>
+                    <p><span className="text-zinc-500 font-semibold uppercase text-[10px]">Cajero:</span> {activeCaja.usuarioNombre}</p>
+                    <p><span className="text-zinc-500 font-semibold uppercase text-[10px]">ID Turno:</span> <span className="font-mono text-[10px]">#{activeCaja.id.substring(0,8)}</span></p>
                   </div>
                 </Card>
               </div>
             </div>
           ) : (
-            /* Caja Cerrada */
+            /* Caja Cerrada: Apertura */
             <div className="animate-in fade-in duration-200">
               <Card className="p-8 border-zinc-800 max-w-md space-y-4">
                 <div className="flex gap-2 items-center text-zinc-400">
@@ -468,7 +539,7 @@ export const ProductsPage: React.FC = () => {
                   <h3 className="text-xs font-bold uppercase tracking-widest text-white">La Caja está Cerrada</h3>
                 </div>
                 <p className="text-[11px] text-zinc-500 leading-relaxed">
-                  Para poder efectuar ventas rápidas en el local o cobrar los pedidos de clientes, es obligatorio inicializar la caja con el fondo inicial del turno.
+                  Para poder efectuar ventas rápidas en el local o cobrar los pedidos de clientes, es obligatorio inicializar la caja con el fondo inicial de apertura.
                 </p>
                 <form onSubmit={handleOpenCaja} className="space-y-4 pt-2">
                   <div>
@@ -490,6 +561,133 @@ export const ProductsPage: React.FC = () => {
               </Card>
             </div>
           )}
+
+          {/* Sección Historial de Cajas */}
+          <div className="space-y-4 pt-6 border-t border-zinc-900">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-1.5">
+                <History size={14} className="text-zinc-500" /> Historial de Cierres de Caja
+              </h3>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Audita las desviaciones de cajas anteriores y modifica o elimina registros si es necesario.</p>
+            </div>
+
+            {cajasHistoryLoading ? (
+              <div className="text-center py-6 text-xs uppercase tracking-widest text-zinc-600">Cargando historial de cierres...</div>
+            ) : cajasHistory.length === 0 ? (
+              <div className="text-center py-6 text-xs uppercase tracking-widest text-zinc-600 border border-zinc-900 bg-zinc-950/20">
+                No hay cierres de caja registrados en el historial.
+              </div>
+            ) : (
+              <div className="bg-zinc-950 border border-zinc-900 overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-zinc-900 text-[10px] uppercase tracking-widest text-zinc-400 bg-zinc-900/20">
+                      <th className="p-3 font-semibold">Turno / Fechas</th>
+                      <th className="p-3 font-semibold">Cajero</th>
+                      <th className="p-3 font-semibold text-right">Fondo Apertura</th>
+                      <th className="p-3 font-semibold text-right">Efectivo (Contado vs Sist.)</th>
+                      <th className="p-3 font-semibold text-right">QR (Reportado vs Sist.)</th>
+                      <th className="p-3 font-semibold text-right">Cuadre / Desviación</th>
+                      <th className="p-3 font-semibold text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-900">
+                    {cajasHistory.map((c: any) => {
+                      const diffEfectivo = c.montoCierreEfectivo !== null ? (c.montoCierreEfectivo - c.montoEfectivo) : 0;
+                      const diffQR = c.montoCierreQR !== null ? (c.montoCierreQR - c.montoQR) : 0;
+                      const totalDiff = diffEfectivo + diffQR;
+
+                      return (
+                        <tr key={c.id} className="hover:bg-zinc-900/10 transition-colors">
+                          <td className="p-3 space-y-0.5">
+                            <span className="font-bold text-white block">#{c.id.substring(0,8)}</span>
+                            <span className="text-[9px] text-zinc-500 block">Apertura: {new Date(c.createdAt).toLocaleString()}</span>
+                            {c.closedAt && (
+                              <span className="text-[9px] text-zinc-500 block">Cierre: {new Date(c.closedAt).toLocaleString()}</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-zinc-300">{c.usuarioNombre}</td>
+                          <td className="p-3 text-right font-mono text-zinc-400">Bs. {c.montoApertura.toFixed(2)}</td>
+                          <td className="p-3 text-right font-mono">
+                            {c.estado === 'CERRADA' ? (
+                              <>
+                                <span className="text-white block font-bold">Bs. {c.montoCierreEfectivo.toFixed(2)}</span>
+                                <span className="text-[9px] text-zinc-500 block">Esperado: Bs. {c.montoEfectivo.toFixed(2)}</span>
+                              </>
+                            ) : (
+                              <span className="text-yellow-500 tracking-wider font-bold">ABIERTA</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right font-mono">
+                            {c.estado === 'CERRADA' ? (
+                              <>
+                                <span className="text-white block font-bold">Bs. {c.montoCierreQR.toFixed(2)}</span>
+                                <span className="text-[9px] text-zinc-500 block">Esperado: Bs. {c.montoQR.toFixed(2)}</span>
+                              </>
+                            ) : (
+                              <span className="text-yellow-500 tracking-wider font-bold">ABIERTA</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right font-mono">
+                            {c.estado === 'CERRADA' ? (
+                              <span className={`font-bold block text-[10px] ${
+                                totalDiff === 0
+                                  ? 'text-emerald-400'
+                                  : totalDiff > 0
+                                  ? 'text-sky-400'
+                                  : 'text-red-400'
+                              }`}>
+                                {totalDiff === 0
+                                  ? 'CUADRADO ✔'
+                                  : totalDiff > 0
+                                  ? `SOBRANTE (Bs. +${totalDiff.toFixed(2)})`
+                                  : `FALTANTE (Bs. ${totalDiff.toFixed(2)})`}
+                              </span>
+                            ) : (
+                              <span className="text-zinc-600">-</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right space-x-1.5">
+                            <Button
+                              onClick={() => {
+                                setSelectedCaja(c);
+                                setIsCajaDetailsOpen(true);
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="px-2 py-0.5 text-[9px] uppercase tracking-wider font-semibold inline-flex items-center gap-0.5 cursor-pointer"
+                            >
+                              <Eye size={10} /> Ver
+                            </Button>
+                            {c.estado === 'CERRADA' && (
+                              <>
+                                <Button
+                                  onClick={() => handleStartCajaEdit(c)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="px-2 py-0.5 text-[9px] uppercase tracking-wider font-semibold inline-flex items-center gap-0.5 cursor-pointer"
+                                >
+                                  <Edit2 size={10} /> Modificar
+                                </Button>
+                                <Button
+                                  onClick={() => handleDeleteCaja(c.id)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="px-2 py-0.5 text-[9px] uppercase tracking-wider font-semibold inline-flex items-center gap-0.5 cursor-pointer text-red-500 border-red-950 hover:bg-red-950/20"
+                                >
+                                  <Trash2 size={10} /> Eliminar
+                                </Button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -500,7 +698,7 @@ export const ProductsPage: React.FC = () => {
         onSuccess={handlePOSSuccess}
       />
 
-      {/* Modal Ver Detalle */}
+      {/* Modal Ver Detalle de Pedido */}
       {isDetailsOpen && selectedOrder && (
         <Modal isOpen={isDetailsOpen} onClose={() => setIsDetailsOpen(false)} title="Detalle del Pedido">
           <div className="space-y-4 text-xs">
@@ -647,6 +845,121 @@ export const ProductsPage: React.FC = () => {
                 Cancelar
               </Button>
               <Button onClick={handleSaveEdit} variant="primary">
+                Guardar Cambios
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Ver Detalle Caja Historial */}
+      {isCajaDetailsOpen && selectedCaja && (
+        <Modal isOpen={isCajaDetailsOpen} onClose={() => setIsCajaDetailsOpen(false)} title="Detalle Cierre de Caja">
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-2 gap-4 border-b border-zinc-900 pb-3">
+              <div>
+                <span className="text-zinc-500 font-semibold block uppercase text-[10px]">ID Turno</span>
+                <span className="font-mono text-white">#{selectedCaja.id}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500 font-semibold block uppercase text-[10px]">Cajero</span>
+                <span className="text-zinc-200">{selectedCaja.usuarioNombre}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-1 border-b border-zinc-900">
+                <span className="text-zinc-400">Fondo Inicial de Apertura:</span>
+                <span className="font-mono font-bold text-white">Bs. {selectedCaja.montoApertura.toFixed(2)}</span>
+              </div>
+
+              {selectedCaja.estado === 'CERRADA' ? (
+                <>
+                  <div className="grid grid-cols-3 gap-2 bg-zinc-900/20 p-2.5 border border-zinc-900">
+                    <span className="text-zinc-500 font-bold uppercase text-[9px]">Método</span>
+                    <span className="text-zinc-500 font-bold uppercase text-[9px] text-right">Contado (Real)</span>
+                    <span className="text-zinc-500 font-bold uppercase text-[9px] text-right">Sistema (Esperado)</span>
+
+                    <span>💵 Efectivo</span>
+                    <span className="font-mono text-right text-white">Bs. {selectedCaja.montoCierreEfectivo.toFixed(2)}</span>
+                    <span className="font-mono text-right text-zinc-400">Bs. {selectedCaja.montoEfectivo.toFixed(2)}</span>
+
+                    <span>📱 QR</span>
+                    <span className="font-mono text-right text-white">Bs. {selectedCaja.montoCierreQR.toFixed(2)}</span>
+                    <span className="font-mono text-right text-zinc-400">Bs. {selectedCaja.montoQR.toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center font-bold text-sm border-t border-zinc-900 pt-2">
+                    <span className="text-zinc-400 uppercase text-xs">Total Cierre:</span>
+                    <span className="font-mono text-white">Bs. {selectedCaja.montoCierre.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-zinc-500 uppercase text-[10px]">Desviación General:</span>
+                    <span className={`font-bold font-mono ${
+                      (selectedCaja.montoCierre - (selectedCaja.montoEfectivo + selectedCaja.montoQR)) === 0
+                        ? 'text-emerald-400'
+                        : (selectedCaja.montoCierre - (selectedCaja.montoEfectivo + selectedCaja.montoQR)) > 0
+                        ? 'text-sky-400'
+                        : 'text-red-400'
+                    }`}>
+                      Bs. {(selectedCaja.montoCierre - (selectedCaja.montoEfectivo + selectedCaja.montoQR)).toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="p-4 bg-yellow-950/20 border border-yellow-900 text-yellow-400 text-center font-bold uppercase text-[10px] tracking-widest">
+                  Esta caja aún se encuentra abierta
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button onClick={() => setIsCajaDetailsOpen(false)} variant="outline">
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Modificar Cierre Caja */}
+      {isCajaEditOpen && selectedCaja && (
+        <Modal isOpen={isCajaEditOpen} onClose={() => setIsCajaEditOpen(false)} title="Modificar Cierre de Caja">
+          <div className="space-y-4 text-xs">
+            <p className="text-zinc-400 text-[11px] leading-relaxed">
+              Corrige los montos físicos reales contados para Efectivo y QR de este cierre en particular.
+            </p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1">Efectivo Contado (Bs.) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={editCajaEfectivo}
+                  onChange={(e) => setEditCajaEfectivo(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-widest text-zinc-400 mb-1">QR Reportado (Bs.) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={editCajaQR}
+                  onChange={(e) => setEditCajaQR(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-zinc-900 pt-4 flex justify-end gap-3">
+              <Button onClick={() => setIsCajaEditOpen(false)} variant="outline">
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveCajaEdit} variant="primary">
                 Guardar Cambios
               </Button>
             </div>
