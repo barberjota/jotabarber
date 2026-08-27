@@ -225,7 +225,7 @@ export const PublicLayout: React.FC = () => {
                         placeholder="Ej: Juan Pérez"
                         value={clientName}
                         onChange={(e) => setClientName(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none uppercase tracking-wider"
+                        className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none"
                       />
                     </div>
                     <div>
