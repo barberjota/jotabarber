@@ -13,6 +13,7 @@ import {
   LogOut,
   Sliders,
   MoreHorizontal,
+  Shield,
 } from 'lucide-react';
 
 export const AdminLayout: React.FC = () => {
@@ -25,7 +26,11 @@ export const AdminLayout: React.FC = () => {
     if (!loading && (!token || (user && user.role !== 'ADMIN' && user.role !== 'STAFF'))) {
       navigate('/');
     }
-  }, [user, token, loading, navigate]);
+    // Si el usuario es STAFF (Peluquero/Barbero), restringir acceso exclusivo a Agenda
+    if (!loading && user && user.role === 'STAFF' && location.pathname !== '/admin/agenda') {
+      navigate('/admin/agenda');
+    }
+  }, [user, token, loading, navigate, location.pathname]);
 
   if (loading || !user) {
     return <div className="min-h-screen bg-darkBg flex items-center justify-center text-xs uppercase tracking-widest text-zinc-500">Cargando panel...</div>;
@@ -40,7 +45,9 @@ export const AdminLayout: React.FC = () => {
       <header className="md:hidden h-16 bg-black border-b border-zinc-900 flex items-center justify-between px-6 z-40 sticky top-0">
         <Link to="/" className="flex items-center gap-2">
           <img src="/branding/logo.png" alt="JotaBarber Logo" className="h-8 w-auto object-contain" />
-          <span className="text-[9px] bg-white text-black px-1.5 py-0.5 uppercase tracking-wider font-bold">Admin</span>
+          <span className="text-[9px] bg-white text-black px-1.5 py-0.5 uppercase tracking-wider font-bold">
+            {isAdmin ? 'Admin' : 'Peluquero'}
+          </span>
         </Link>
         <div className="flex items-center gap-3">
           <ThemeToggle />
@@ -63,7 +70,9 @@ export const AdminLayout: React.FC = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group">
             <img src="/branding/logo.png" alt="JotaBarber Logo" className="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
-            <span className="text-[9px] bg-white text-black px-1 py-0.5 uppercase tracking-wider font-bold">Admin</span>
+            <span className="text-[9px] bg-white text-black px-1 py-0.5 uppercase tracking-wider font-bold">
+              {isAdmin ? 'Admin' : 'Peluquero'}
+            </span>
           </Link>
 
           {/* User Info Bar */}
@@ -73,7 +82,9 @@ export const AdminLayout: React.FC = () => {
             </div>
             <div>
               <h4 className="font-bold text-white text-xs uppercase tracking-wider line-clamp-1">{user.name}</h4>
-              <span className="text-[9px] text-zinc-500 uppercase tracking-widest">Sesión Activa</span>
+              <span className="text-[9px] text-zinc-500 uppercase tracking-widest">
+                {isAdmin ? 'Administrador' : 'Peluquero / Barbero'}
+              </span>
             </div>
           </div>
 
@@ -81,49 +92,64 @@ export const AdminLayout: React.FC = () => {
           <nav className="flex flex-col gap-1">
             <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mb-1.5 block">Operaciones</span>
             
-            <Link
-              to="/admin/dashboard"
-              className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
-                isActive('/admin/dashboard')
-                  ? 'bg-white text-black border-white'
-                  : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
-              }`}
-            >
-              <LayoutDashboard size={14} /> Dashboard
-            </Link>
+            {isAdmin ? (
+              <>
+                <Link
+                  to="/admin/dashboard"
+                  className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
+                    isActive('/admin/dashboard')
+                      ? 'bg-white text-black border-white'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
+                  }`}
+                >
+                  <LayoutDashboard size={14} /> Dashboard
+                </Link>
 
-            <Link
-              to="/admin/agenda"
-              className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
-                isActive('/admin/agenda')
-                  ? 'bg-white text-black border-white'
-                  : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
-              }`}
-            >
-              <Calendar size={14} /> Agenda
-            </Link>
+                <Link
+                  to="/admin/agenda"
+                  className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
+                    isActive('/admin/agenda')
+                      ? 'bg-white text-black border-white'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
+                  }`}
+                >
+                  <Calendar size={14} /> Agenda
+                </Link>
 
-            <Link
-              to="/admin/clientes"
-              className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
-                isActive('/admin/clientes')
-                  ? 'bg-white text-black border-white'
-                  : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
-              }`}
-            >
-              <Users size={14} /> Clientes & Fidelidad
-            </Link>
+                <Link
+                  to="/admin/clientes"
+                  className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
+                    isActive('/admin/clientes')
+                      ? 'bg-white text-black border-white'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
+                  }`}
+                >
+                  <Users size={14} /> Clientes & Fidelidad
+                </Link>
 
-            <Link
-              to="/admin/ventas"
-              className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
-                isActive('/admin/ventas')
-                  ? 'bg-white text-black border-white'
-                  : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
-              }`}
-            >
-              <ShoppingBag size={14} /> POS & Caja
-            </Link>
+                <Link
+                  to="/admin/ventas"
+                  className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
+                    isActive('/admin/ventas')
+                      ? 'bg-white text-black border-white'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
+                  }`}
+                >
+                  <ShoppingBag size={14} /> POS & Caja
+                </Link>
+              </>
+            ) : (
+              <Link
+                to="/admin/agenda"
+                className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
+                  isActive('/admin/agenda')
+                    ? 'bg-white text-black border-white'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
+                }`}
+              >
+                <Calendar size={14} /> Mi Agenda (Citas)
+              </Link>
+            )}
 
             {/* Admin Only Config Section */}
             {isAdmin && (
@@ -162,6 +188,17 @@ export const AdminLayout: React.FC = () => {
                 >
                   <Package size={14} /> Productos (Stock)
                 </Link>
+
+                <Link
+                  to="/admin/usuarios"
+                  className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
+                    isActive('/admin/usuarios')
+                      ? 'bg-white text-black border-white'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
+                  }`}
+                >
+                  <Shield size={14} /> Usuarios
+                </Link>
               </>
             )}
           </nav>
@@ -182,46 +219,58 @@ export const AdminLayout: React.FC = () => {
         </div>
       </aside>
 
-      {/* Barra de Navegación Inferior para Móvil (4 Botones Importantes) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-900 flex items-center justify-around py-2 z-50">
-        <Link
-          to="/admin/dashboard"
-          className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
-            isActive('/admin/dashboard') ? 'text-white' : 'text-zinc-500'
-          }`}
-        >
-          <LayoutDashboard size={18} />
-          <span>Dashboard</span>
-        </Link>
-        <Link
-          to="/admin/agenda"
-          className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
-            isActive('/admin/agenda') ? 'text-white' : 'text-zinc-500'
-          }`}
-        >
-          <Calendar size={18} />
-          <span>Agenda</span>
-        </Link>
-        <Link
-          to="/admin/ventas"
-          className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
-            isActive('/admin/ventas') ? 'text-white' : 'text-zinc-500'
-          }`}
-        >
-          <ShoppingBag size={18} />
-          <span>Ventas</span>
-        </Link>
-        <button
-          type="button"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
-            isMobileMenuOpen ? 'text-white' : 'text-zinc-500'
-          }`}
-        >
-          <MoreHorizontal size={18} />
-          <span>Más</span>
-        </button>
-      </div>
+      {/* Barra de Navegación Inferior para Móvil */}
+      {isAdmin ? (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-900 flex items-center justify-around py-2 z-50">
+          <Link
+            to="/admin/dashboard"
+            className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
+              isActive('/admin/dashboard') ? 'text-white' : 'text-zinc-500'
+            }`}
+          >
+            <LayoutDashboard size={18} />
+            <span>Dashboard</span>
+          </Link>
+          <Link
+            to="/admin/agenda"
+            className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
+              isActive('/admin/agenda') ? 'text-white' : 'text-zinc-500'
+            }`}
+          >
+            <Calendar size={18} />
+            <span>Agenda</span>
+          </Link>
+          <Link
+            to="/admin/ventas"
+            className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
+              isActive('/admin/ventas') ? 'text-white' : 'text-zinc-500'
+            }`}
+          >
+            <ShoppingBag size={18} />
+            <span>Ventas</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
+              isMobileMenuOpen ? 'text-white' : 'text-zinc-500'
+            }`}
+          >
+            <MoreHorizontal size={18} />
+            <span>Más</span>
+          </button>
+        </div>
+      ) : (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-900 flex items-center justify-around py-2 z-50">
+          <Link
+            to="/admin/agenda"
+            className="flex items-center justify-center gap-2 text-xs uppercase tracking-widest font-bold py-2 text-white w-full"
+          >
+            <Calendar size={18} />
+            <span>Mi Agenda de Citas</span>
+          </Link>
+        </div>
+      )}
 
       {/* Menú Móvil "Más" Overlay */}
       {isMobileMenuOpen && (
@@ -292,6 +341,18 @@ export const AdminLayout: React.FC = () => {
                     }`}
                   >
                     <Package size={16} /> Productos (Stock)
+                  </Link>
+
+                  <Link
+                    to="/admin/usuarios"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 text-xs uppercase tracking-widest font-semibold border ${
+                      isActive('/admin/usuarios')
+                        ? 'bg-white text-black border-white'
+                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                    }`}
+                  >
+                    <Shield size={16} /> Usuarios
                   </Link>
                 </>
               )}

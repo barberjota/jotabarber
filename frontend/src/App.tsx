@@ -20,6 +20,7 @@ import { CustomersLoyaltyPage } from './pages/admin/CustomersLoyaltyPage';
 import { ProductsPage } from './pages/admin/ProductsPage';
 import { ServicesPage } from './pages/admin/ServicesPage';
 import { StaffPage } from './pages/admin/StaffPage';
+import { UsersPage } from './pages/admin/UsersPage';
 
 const App: React.FC = () => {
   return (
@@ -47,6 +48,7 @@ const App: React.FC = () => {
               <Route path="servicios" element={<ServicesPage />} />
               <Route path="estilistas" element={<StaffPage />} />
               <Route path="productos" element={<ProductsPage />} />
+              <Route path="usuarios" element={<UsersPage />} />
             </Route>
 
             {/* Redirección por defecto */}

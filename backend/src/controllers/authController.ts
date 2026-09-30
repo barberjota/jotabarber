@@ -76,6 +76,7 @@ export const login = async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.usuario.findUnique({
       where: { telefono: phone },
+      include: { estilista: true },
     });
 
     if (!user) {
@@ -103,6 +104,7 @@ export const login = async (req: AuthRequest, res: Response) => {
         role: mapRole(user.rol),
         pointsBalance: user.saldoPuntos,
         completedCuts: user.cortesCompletados,
+        stylistId: user.estilista?.id || null,
       },
     });
   } catch (error: any) {
@@ -118,6 +120,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
   try {
     const user = await prisma.usuario.findUnique({
       where: { id: req.user.id },
+      include: { estilista: true },
     });
 
     if (!user) {
@@ -132,6 +135,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
       role: mapRole(user.rol),
       pointsBalance: user.saldoPuntos,
       completedCuts: user.cortesCompletados,
+      stylistId: user.estilista?.id || null,
       createdAt: user.createdAt,
     });
   } catch (error: any) {

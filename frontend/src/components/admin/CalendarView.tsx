@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api from '../../services/api';
+import { useAuth } from '../../hooks/useAuth';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -56,6 +57,7 @@ interface Service {
 }
 
 export const CalendarView: React.FC = () => {
+  const { user } = useAuth();
   const dateInputRef = useRef<HTMLInputElement>(null);
   const editDateInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,6 +124,14 @@ export const CalendarView: React.FC = () => {
       try {
         const res = await api.get('/client/stylists');
         setStylists(res.data);
+        if (user && user.role === 'STAFF') {
+          if (user.stylistId) {
+            setSelectedStylistId(user.stylistId);
+          } else {
+            const match = res.data.find((s: Stylist) => s.name.toLowerCase() === user.name.toLowerCase());
+            if (match) setSelectedStylistId(match.id);
+          }
+        }
       } catch (err) {
         console.error('Error al obtener estilistas:', err);
       }
@@ -136,7 +146,7 @@ export const CalendarView: React.FC = () => {
     };
     fetchStylists();
     fetchServices();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -359,13 +369,16 @@ Detalles de tu turno:
           </div>
         </div>
         <div className="flex-1">
-          <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-2 font-medium">Filtrar por Barbero</label>
+          <label className="block text-xs uppercase tracking-widest text-zinc-400 mb-2 font-medium">
+            {user?.role === 'STAFF' ? 'Mi Agenda (Barbero)' : 'Filtrar por Barbero'}
+          </label>
           <select
             value={selectedStylistId}
             onChange={(e) => setSelectedStylistId(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none uppercase tracking-wider"
+            disabled={user?.role === 'STAFF' && selectedStylistId !== 'all'}
+            className="w-full bg-zinc-900 border border-zinc-800 px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 rounded-none uppercase tracking-wider disabled:opacity-80"
           >
-            <option value="all">Todos los barberos</option>
+            {user?.role !== 'STAFF' && <option value="all">Todos los barberos</option>}
             {stylists.map((st) => (
               <option key={st.id} value={st.id}>
                 {st.name}

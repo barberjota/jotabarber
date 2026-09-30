@@ -9,6 +9,7 @@ export interface User {
   role: 'CLIENT' | 'STAFF' | 'ADMIN';
   pointsBalance: number;
   completedCuts: number;
+  stylistId?: string | null;
 }
 
 interface AuthContextType {
