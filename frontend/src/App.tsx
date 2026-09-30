@@ -18,6 +18,7 @@ import { DashboardPage } from './pages/admin/DashboardPage';
 import { CalendarPage } from './pages/admin/CalendarPage';
 import { CustomersLoyaltyPage } from './pages/admin/CustomersLoyaltyPage';
 import { ProductsPage } from './pages/admin/ProductsPage';
+import { OrdersPage } from './pages/admin/OrdersPage';
 import { ServicesPage } from './pages/admin/ServicesPage';
 import { StaffPage } from './pages/admin/StaffPage';
 import { UsersPage } from './pages/admin/UsersPage';
@@ -41,8 +42,9 @@ const App: React.FC = () => {
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="agenda" element={<CalendarPage />} />
+              <Route path="pedidos" element={<OrdersPage />} />
+              <Route path="ventas" element={<Navigate to="/admin/pedidos" replace />} />
               <Route path="clientes" element={<CustomersLoyaltyPage />} />
-              <Route path="ventas" element={<ProductsPage />} />
               
               {/* Rutas exclusivas de Admin (Se controlan internamente también) */}
               <Route path="servicios" element={<ServicesPage />} />

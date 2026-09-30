@@ -117,6 +117,17 @@ export const AdminLayout: React.FC = () => {
                 </Link>
 
                 <Link
+                  to="/admin/pedidos"
+                  className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
+                    isActive('/admin/pedidos')
+                      ? 'bg-white text-black border-white'
+                      : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
+                  }`}
+                >
+                  <ShoppingBag size={14} /> Pedidos
+                </Link>
+
+                <Link
                   to="/admin/clientes"
                   className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
                     isActive('/admin/clientes')
@@ -125,17 +136,6 @@ export const AdminLayout: React.FC = () => {
                   }`}
                 >
                   <Users size={14} /> Clientes & Fidelidad
-                </Link>
-
-                <Link
-                  to="/admin/ventas"
-                  className={`flex items-center gap-2 px-3 py-2.5 text-xs uppercase tracking-widest font-semibold border transition-all ${
-                    isActive('/admin/ventas')
-                      ? 'bg-white text-black border-white'
-                      : 'bg-zinc-950 text-zinc-400 border-zinc-900 hover:text-white hover:border-zinc-700'
-                  }`}
-                >
-                  <ShoppingBag size={14} /> POS & Caja
                 </Link>
               </>
             ) : (
@@ -241,13 +241,13 @@ export const AdminLayout: React.FC = () => {
             <span>Agenda</span>
           </Link>
           <Link
-            to="/admin/ventas"
+            to="/admin/pedidos"
             className={`flex flex-col items-center gap-0.5 text-[9px] uppercase tracking-wider font-semibold py-1 w-1/4 ${
-              isActive('/admin/ventas') ? 'text-white' : 'text-zinc-500'
+              isActive('/admin/pedidos') ? 'text-white' : 'text-zinc-500'
             }`}
           >
             <ShoppingBag size={18} />
-            <span>Ventas</span>
+            <span>Pedidos</span>
           </Link>
           <button
             type="button"
